@@ -392,15 +392,26 @@ sealed class ItemRolls(ItemCatalog catalog, string folder = "data", SystemSettin
         return mod.Roll(m.Section, rng, own is null ? null : stat => own(mod, m.Section, stat));
     }
 
+    /// <summary>Orb of Scouring: a magic, rare or unique item loses its unprotected explicit mods. With none left it is
+    /// normal; one leaves it magic and two or more leave it rare. A unique also loses its name and returns to the base
+    /// type's art. Implicits, enchants, quality and sockets stay. A normal item, or one whose explicits are all
+    /// protected, is refused.</summary>
     public Item? Scour(Item item)
     {
-        if (item.Rarity is not (ItemRarity.Magic or ItemRarity.Rare)) return null;
+        if (item.Rarity is not (ItemRarity.Magic or ItemRarity.Rare or ItemRarity.Unique)) return null;
         var rules = new MetacraftRules(item, catalog.Mods);
         var kept = item.Mods.Where((m, i) => m.Section != ModSection.Explicit || rules.Protected(i)).ToArray();
         int count = kept.Count(m => m.Section == ModSection.Explicit);
         var rarity = count == 0 ? ItemRarity.Normal : count == 1 ? ItemRarity.Magic : ItemRarity.Rare;
         if (kept.Length == item.Mods.Count && rarity == item.Rarity) return null;
-        return item with { Mods = kept, Rarity = rarity, Identified = true, NameWords = rarity == ItemRarity.Rare ? item.NameWords : [] };
+        bool leftUnique = item.Rarity == ItemRarity.Unique;
+        ushort visual = leftUnique && catalog.ByHash(item.TypeHash) is { } type
+            ? type.VisualIdentity : item.VisualIdentity;
+        return item with
+        {
+            Mods = kept, Rarity = rarity, Identified = true, VisualIdentity = visual,
+            NameWords = !leftUnique && rarity == ItemRarity.Rare ? item.NameWords : [],
+        };
     }
 
     /// <summary>Annulment's validated explicit-affix removal: one random unprotected explicit leaves a magic or rare

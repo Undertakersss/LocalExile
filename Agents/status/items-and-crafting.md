@@ -459,7 +459,7 @@ Part of [Status](../Status.md); what to build next in this area is in
   See [13](../docs/protocol/13-items.md), "Orb of Fusing".
 - Currency metamods: Scouring/Chaos/Divine/Annul respect prefix/suffix locks;
   annul and affix additions respect attack/caster restrictions.
-  Scouring retains quality and refuses uniques.
+  Scouring retains quality and turns a unique into its normal base.
   Real-data regression tests cover both lock directions.
 
 ## Not working yet
