@@ -101,9 +101,9 @@ Effect text and numbers are the wiki's (from the game's stat descriptions) and t
   physical bounds (`WeaponStats`), attack gems (`SupportedHitFor`), `AttackSkillHit` and ordinary bows. Minimum damage
   and spells are unchanged. PoB applies MaxDamage MORE to each type's own maximum and carries it through conversion,
   which is the same. The wiki says the stat applies to the skill's base and added damage, so it also raises the
-  damaging ailments an attack inflicts (PoB builds an ailment's base through the same `calcDamage`). Attacks inflict
-  no damaging ailments on the server yet; when they do, their flat ailment packet goes through
-  `MaximumAttackDamage.Apply` after conversion, before `IgniteFromHit` (roadmap, skills and combat). The client
+  damaging ailments an attack inflicts (PoB builds an ailment's base through the same `calcDamage`). Attack ignites
+  use the panel rows, then scale their maxima through `MaximumAttackDamage.Apply` (`ContactIgnite`); minima and spells
+  stay unchanged. Bleed and ignite proliferation are still open (roadmap, skills and combat). The client
   multiplies its three sources
   (`combined_maximum_attack_damage_+%_final` = Π max(0, 1 + x/100) × 100 − 100, rounded: `FUN_1425d25b0`, checked
   in capstone at `0x1425d292e`); only the ascendancy source exists on the server.

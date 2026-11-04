@@ -68,18 +68,61 @@ static partial class Game
     internal static byte[] IgnitedBuff(uint id, ushort instance, double seconds) =>
         InstanceEntities.AddBuff(id, instance, IgnitedBuffRow, PlayerId, u68: BitConverter.SingleToUInt32Bits((float)seconds));
 
-    // Called under the combat lock at an accepted projectile hit that dealt fire damage and left the monster alive: the
-    // shot's ignite (MonsterIgnites.TryApply, its duration less by the target's base_self_ignite_duration_-%), and the
-    // monster's ignited buff.
-    internal static void IgniteOnHitLocked(ProjectileSession session, uint id, SpawnedMonster target,
+    /// <summary>
+    /// The ignite a hit can inflict, from the Offence tab's ignite rows (<see cref="AilmentPanelStats"/>).
+    /// An attack's maxima then pass through <see cref="MaximumAttackDamage.Apply"/>: more maximum attack damage scales
+    /// the flat maximum before those increases, and minima and spells stay as the rows published them.
+    /// </summary>
+    internal static MonsterIgnites.Settings ContactIgnite(IEnumerable<(string Stat, int Value)> rows, string hand,
+        Func<string, int> get, bool attack)
+    {
+        var settings = MonsterIgnites.Settings.From(rows, hand, get);
+        if (!attack) return settings;
+        static DamageRange Scale(double min, double max, Func<string, int> get) =>
+            MaximumAttackDamage.Apply(DamagePacket.Of(DamageType.Fire, min, max), get)[DamageType.Fire];
+        var hit = Scale(settings.Min, settings.Max, get);
+        var critical = Scale(settings.CriticalMin, settings.CriticalMax, get);
+        return settings with { Min = hit.Min, Max = hit.Max, CriticalMin = critical.Min, CriticalMax = critical.Max };
+    }
+
+    /// <summary>The default melee attack's ignite, from the same raw packet and player stats as its hit and its panel rows.</summary>
+    internal static MonsterIgnites.Settings MeleeAttackIgnite(SkillCatalog.Unarmed weapon, IReadOnlyDictionary<uint, int> player)
+    {
+        int Get(string name) => Stats.Key(name) is uint key ? player.GetValueOrDefault(key) : 0;
+        var rows = AilmentPanelStats.Compute(new("main_hand", Spell: false, Melee: true),
+            SupportedAttackDamage.Raw(weapon, Get), DamageStats.Conversion(player, Stats, true), Get);
+        return ContactIgnite(rows, "main_hand", Get, attack: true);
+    }
+
+    /// <summary>A non-projectile gem hit's ignite (a strike, slam or area spell), from that skill's panel rows.
+    /// <paramref name="weapon"/> is a shield skill's shield; other skills use the active main hand.</summary>
+    internal static MonsterIgnites.Settings GemContactIgnite(ClientState conn, ushort skillId, SkillCatalog.Unarmed? weapon = null)
+    {
+        if (SupportedHitInputsFor(conn, skillId, weapon: weapon) is not { } inputs) return MonsterIgnites.Settings.None;
+        string hand = inputs.Attack ? "main_hand"
+            : inputs.Get("display_skill_deals_secondary_damage") != 0 ? "secondary" : "spell";
+        return ContactIgnite(SupportedAilmentRowsFrom(inputs, hand), hand, inputs.Get, inputs.Attack);
+    }
+
+    // Called under the combat lock at an accepted hit that dealt fire damage and left the monster alive: the hit's
+    // ignite (MonsterIgnites.TryApply, its duration less by the target's base_self_ignite_duration_-%), and the
+    // monster's ignited buff. Null when nothing was added.
+    internal static List<byte[]>? ApplyContactIgniteLocked(ClientState conn, uint id, SpawnedMonster target,
         MonsterIgnites.Settings settings, bool critical, double now)
     {
-        if (target.Invulnerable) return;
+        if (target.Invulnerable || target.Dead || target.Life == 0) return null;
         var e = target.Mods.Effects;
         settings = settings with { Seconds = settings.Seconds * MonsterIgnites.SelfDuration(name => e[name]) };
         if (!target.Ignites.TryApply(settings, critical, now, e["avoid_ignite_%"],
-                e["immune_to_ignite"] != 0 || e["cannot_be_ignited"] != 0, session.Conn.IgniteRandom)) return;
-        var packets = ShowIgnitedLocked(session.Conn, id, target, now);
+                e["immune_to_ignite"] != 0 || e["cannot_be_ignited"] != 0, conn.IgniteRandom)) return null;
+        return ShowIgnitedLocked(conn, id, target, now);
+    }
+
+    internal static void IgniteOnHitLocked(ProjectileSession session, uint id, SpawnedMonster target,
+        MonsterIgnites.Settings settings, bool critical, double now)
+    {
+        var packets = ApplyContactIgniteLocked(session.Conn, id, target, settings, critical, now);
+        if (packets is null) return;
         for (int i = 0; i < packets.Count; i++)
             session.Packet(packets[i], i < packets.Count - 1 ? null
                 : $"monster 0x{id:x} ({target.Label}) ignited{(critical ? " by a critical hit" : "")} for {target.Ignites.Until - now:0.##} s");

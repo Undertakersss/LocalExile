@@ -294,6 +294,7 @@ static partial class Game
             int impaleStacks, damage;
             bool impaled, critical;
             string? resistance;
+            List<byte[]>? ignited = null;
             using (ProjectileMutation(conn))
             {
                 if (m.Life == 0) return true;
@@ -357,6 +358,9 @@ static partial class Game
                 if (life == 0) { m.Aggro = false; m.Dead = true; CollectVaalSoulAtDeathLocked(conn, m); }
                 AilmentsOnHitLocked(conn, m, mitigated, spell: false, critical, criticalMultiplier, player, ownPenetration,
                     at, Random.Shared);
+                if (life > 0 && ownRolled[DamageType.Fire].Max > 0)
+                    ignited = ApplyContactIgniteLocked(conn, targetId, m,
+                        MeleeAttackIgnite(weapon, player), critical, at);
                 TriggerElementalRelicLocked(conn, m, hit: damage > 0, killed: life == 0);
                 if (!raged) raged = RageOnHitLocked(conn, attack: true, melee: WeaponProfileFor(conn, activeSet: true).Melee, critical);
                 InflictMonsterBlind(conn, targetId, m, ResourceEffectsTime(conn), BlindInputs(player));
@@ -379,6 +383,10 @@ static partial class Game
                 InstanceProtocol.ActionHit(PlayerId, use.Sequence, targetId, flags: 0x4201, kind: 0x03,
                     angle: HitAngle(target.X - stop.X, target.Y - stop.Y)),
                 $"0x01af player hit on monster 0x{targetId:x} (sequence 0x{use.Sequence:x4})");
+            if (ignited is not null)
+                for (int i = 0; i < ignited.Count; i++)
+                    await Send(remote, stream, ciphers, ignited[i], i < ignited.Count - 1 ? null
+                        : $"0x01c1 monster 0x{targetId:x} ({m.Label}) ignited{(critical ? " by a critical hit" : "")}");
             await Send(remote, stream, ciphers, InstanceProtocol.LifeUpdate(targetId, life),
                 $"0x01b1 monster 0x{targetId:x} hit for {damage}{(critical ? " (critical)" : "")}" +
                 (resistance is { } note ? $", {note}" : "") +
@@ -1089,6 +1097,7 @@ static partial class Game
         AttackAccuracyProfile accuracy = default;
         LeechSources? leech = null;
         ImpaleStats.Settings impale = default, criticalImpale = default;
+        MonsterIgnites.Settings sweepIgnite = default;
         // Every monster gets its hit before the sweep's deaths run their loot, experience and quest work, and before a
         // Mirrored monster's reflected ailments reach the player (its freeze would end the action between two targets).
         var deaths = new List<(uint Id, SpawnedMonster M)>();
@@ -1101,6 +1110,7 @@ static partial class Game
             int damage;
             bool critical;
             string? resistance;
+            List<byte[]>? ignited = null;
             using (ProjectileMutation(conn))
             {
                 // Catch up earlier projectile contacts before reading Rage or any other live offensive input. Stopping
@@ -1125,6 +1135,7 @@ static partial class Game
                     leech = HitLeechSources(player, !spell, skillStats, local);
                     impale = ImpaleStats.From(player, Stats, !spell, skillStats, local);
                     criticalImpale = ImpaleStats.From(player, Stats, !spell, skillStats, local, critical: true);
+                    sweepIgnite = GemContactIgnite(conn, skillId, shield);
                 }
                 var contactHit = sweepHit;
                 if (VaalExecutor(conn, gem.Effect))
@@ -1176,6 +1187,8 @@ static partial class Game
                     landed++;
                     AilmentsOnHitLocked(conn, m, mitigated, spell, critical, multiplier, player, skillStats, at, Random.Shared,
                         reflected);
+                    if (m.Life > 0 && rolled[DamageType.Fire].Max > 0)
+                        ignited = ApplyContactIgniteLocked(conn, id, m, sweepIgnite, critical, at);
                 }
                 if (applied is { StageStarts: true } staged)
                 {
@@ -1194,6 +1207,10 @@ static partial class Game
                 }
             }
             if (applied is not { } hit) continue;
+            if (ignited is not null)
+                for (int i = 0; i < ignited.Count; i++)
+                    await Send(remote, stream, ciphers, ignited[i], i < ignited.Count - 1 ? null
+                        : $"0x01c1 monster 0x{id:x} ({m.Label}) ignited{(critical ? " by a critical hit" : "")}");
             if (critical) _ = GainFlaskChargesOnCrit(remote, stream, ciphers, conn);
             if (critical) await MaybeCreateProfaneGround(remote, stream, ciphers, conn, m.Walk.Position(ProjectileWorldTime(conn)));
             await NotifyMonsterHit(remote, stream, ciphers, conn, id, m, hit, damage,

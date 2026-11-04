@@ -1520,8 +1520,11 @@ This is a research baseline, not new live skill acceptance or complete native/se
   Both add to the monster's one set of ignites: only the strongest burns, through the monster's fire resistance, every
   player tick, with one timed `ignited` buff and kills.
   They burn on while the player is dead (unverified), with no progress from a dead Hardcore character's kills.
-  The default melee attack and melee or area gems do not ignite yet; the footstep ignite has Gateway coverage only,
-  not checked with the real client (`MonsterIgnites.cs`, [20](../docs/protocol/20-damage.md) §3).
+  The default melee attack and melee or area gems ignite from those panel rows, read at contact.
+  An attack's ignite maxima include more maximum attack damage.
+  Bleed, ignite proliferation and a native check remain open
+  (`MonsterIgnites.cs`, [20](../docs/protocol/20-damage.md) §3).
+  The footstep ignite has Gateway coverage only, not checked with the real client.
   Incoming ordinary monster basic-contact ailments now have runtime and Gateway coverage:
   critical fire ignite, cold chill/freeze and critical lightning shock, with avoidance, expiry, immunity, lethal ignite/ES and freeze action cancellation.
   `action_speed_cannot_be_reduced_below_base` keeps the action factor at 1 under chill and freeze (Gateway coverage,
