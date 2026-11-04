@@ -92,7 +92,7 @@ more damage with bleeding, poison and ignite, and the count across Multistrike r
 
 A native compatibility match and a displayed support letter do not prove that its special mechanic is implemented.
 Spell Echo's repeats are modelled ([11](11-skills.md) "Spell repeats"), except Ice Nova's and the final-repeat stats.
-Triggers, totems, mines, minion behaviour, attack repeats, projectile branching, leech and many conditional effects
+Triggers, totems, mines, minion behaviour, projectile branching, leech and many conditional effects
 still require their own execution paths.
 Persistent damage effects, including Righteous Fire, do not yet refresh every derived parameter on link changes.
 Only the unconditional damage keys listed by GemSupportDamage and the three target conditions above receive

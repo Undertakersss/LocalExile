@@ -78,6 +78,8 @@ Nothing yet.
   The supported critical values appeared in its panel and tooltip; special execution still has the gaps below.
   Spell Echo repeats a supported spell's releases and area hits a cast time apart, with its 40% more cast speed
   (`SpellRepeats`; [11](../docs/protocol/11-skills.md) "Spell repeats"); tested, not yet checked with the real client.
+  Multistrike repeats a supported attack once per `attack_repeat_count`, one swing apart, on the same cost and
+  critical roll (`AttackRepeats`). The less-damage and more-speed stats stay the support's own. Not checked live.
   Special execution mechanics remain incomplete; see [25](../docs/protocol/25-gem-supports.md).
 
 - **Culling Strike.** Melee, area and projectile hits cull at 10% Life ([25](../docs/protocol/25-gem-supports.md)).

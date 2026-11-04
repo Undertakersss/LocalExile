@@ -99,14 +99,17 @@ static partial class Game
             ? PlayerActionCurrent(conn, action)
             : conn.PlayerLife > 0 && conn.ElementalAilments.ActionFactor(conn.Clock.Elapsed.TotalSeconds) > 0 && !conn.HitRecovery.Active(conn.Clock.Elapsed.TotalSeconds)))
             && GemSkillInstanceDisabled(conn, gem.Effect, skillId) is null;
-        // A spell's repeats (SpellRepeats) release again a cast time apart, with the use's critical roll; a new action
-        // cancels the rest, as it ends the client's.
+        // A spell's repeats (SpellRepeats) and an attack's (AttackRepeats, Multistrike) release again one cast or
+        // one swing later, with the use's critical roll. A later repeat stops when the action is no longer current.
         // shortcut: a repeat keeps the cast's aim point; check live whether the client re-aims at a moving target.
-        int repeats = attack ? 0 : SpellRepeats(conn, skillId, gem.Effect);
+        int repeats = attack ? AttackRepeats(conn, skillId, gem.Effect) : SpellRepeats(conn, skillId, gem.Effect);
+        double cycle = attack ? SupportedAttackSeconds(conn, skillId) : cast.Value / 1000d;
         for (int repeat = 0; repeat <= repeats; repeat++)
         {
             int left = repeats - repeat;
-            session.Schedule(ProjectileRuntime.Time(acceptedAt + repeat * cast.Value / 1000d + delay), Valid,
+            int index = repeat;
+            session.Schedule(ProjectileRuntime.Time(RepeatContactAt(acceptedAt, index, cycle, delay)),
+                () => Valid() && (index == 0 || PlayerActionCurrent(conn, action)),
                 () => ClientDrawnVolley(conn, session, skillId, gem,
                     CaptureGemProjectile(conn, session, skillId, gem, aim, criticalRoll, sequence, (uint)left),
                     sequence, (uint)left));
