@@ -345,7 +345,8 @@ remaining native checks are recorded in [the port record](../docs/dev/issue75-po
   `MonsterResistances` by the level's difficulty, `MonsterResistanceCatalog`/`HitMitigation`), with the hit's
   unconditional penetration subtracted from the capped value and no second clamp (`Penetration`): general
   per-element and elemental stats on every hit, attack-only variants on attacks, the cannot-penetrate flag
-  suppressing the elemental ones; DoT and physical take none. Monster armour is still not modelled.
+  suppressing the elemental ones; DoT and physical take none. A monster's physical hits take its level armour
+  (`DefaultMonsterStats.Armour`, plus MonsterTypes `Armour` as increased percent). Map mods that grant armour remain open.
   The player's real life, resistances, armour and evasion are computed from level, passives and base equipment, and
   armour/evasion mitigate monster hits (Status: Armour and Evasion).
   Ordinary physical monster melee can now trigger native player hit recovery with matching server cancellation.

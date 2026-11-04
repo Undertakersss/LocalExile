@@ -871,6 +871,13 @@ mechanics remain open; source IDs, support lifecycle and parsed contact tests ar
   `MonsterCatalog.BaseResistance`, the shared pass is `HitMitigation`). Without the extracted tables every type reads
   0 for the base input.
   Spawned-monster resistance modifiers add before the cap; physical reduction and damage taken apply after mitigation.
+  The physical part then takes the monster's armour: DefaultMonsterStats `Armour` at that level, times
+  `(100 + MonsterTypes.Armour) / 100` (the type column is an increased percent: 0 keeps the base rating, 33 is
+  Shaper's bonus, 100 doubles it as Sirus's). That rating, after `physical_damage_reduction_rating_+%` from the
+  monster's mods, uses the player's armour formula (`armour / (armour + damage × 5)`, capped at 90%) and adds to
+  the mod's additional physical reduction, still capped at 90% (`PhysicalArmourFactor`). Fire, cold, lightning,
+  chaos and damage over time do not take it. Map mods that grant armour are not read. Without the tables the
+  rating is 0, so a hit is unchanged.
   Ordinary bows snapshot player/skill penetration at release and resolve target resistance at contact.
   Main has no connection-aware resistance or presence engine; those archival #206 systems are outside this stack.
   Automated mixed fractional-hit, target-modifier, bow RNG and same-key player/skill cases cover the resolved paths.
@@ -1213,7 +1220,7 @@ mitigation are composed as described in the [projectile module](../game/projecti
 
 ## 6. Not modelled yet
 
-- Skill and aura Exposure (on-hit Exposure is in §2), full monster armour and specialized damage-taken modifiers; ordinary player Energy Shield and the
+- Skill and aura Exposure (on-hit Exposure is in §2), map-mod monster armour and specialized damage-taken modifiers; ordinary player Energy Shield and the
   supported incoming shock path are implemented. The monsters' base resistances are in §4, with penetration.
 - Remaining skill-specific increased/more/effectiveness mechanics beyond the documented packet and support paths.
   Weapon-local and character flat ranges retain conversion history and their separate scopes.

@@ -172,6 +172,22 @@ sealed class MonsterCatalog(string folder = "data")
         _life.Value is { } t && level >= 1 && level <= t.Levels.Count ? t.Levels[level - 1].EvasiveEvasion : null;
 
     /// <summary>
+    /// Armour a monster of this variety has at this level: DefaultMonsterStats <c>Armour</c> (the level's base rating,
+    /// the same column Path of Building reads as the monster armour table), raised by MonsterTypes <c>Armour</c> as an
+    /// increased percent (0 keeps the base rating; 33 is Shaper's bonus; 100 doubles it, as Sirus's).
+    /// Null when the tables are missing. Mods' <c>physical_damage_reduction_rating_+%</c> apply on top
+    /// (<see cref="MonsterModEffects.Armour"/>).
+    /// </summary>
+    public int? BaseArmour(Variety? variety, int level)
+    {
+        if (_life.Value is not { } t || level < 1 || level > t.Levels.Count) return null;
+        int rating = t.Levels[level - 1].Armour;
+        int increased = variety is { MonsterType: >= 0 } type && type.MonsterType < t.Types.Count
+            ? t.Types[type.MonsterType].ArmourIncreased : 0;
+        return Math.Max(0, rating * (100 + increased) / 100);
+    }
+
+    /// <summary>
     /// The life and damage a unique map boss has more than its base life and hit at this map level: MonsterMapBossDifficulty
     /// <c>BossLifePercentIncrease</c>/<c>BossDamagePercentIncrease</c> plus MonsterMapDifficulty
     /// <c>LifePercentIncrease</c>/<c>DamagePercentIncrease</c>, added as percentages (level 83: 1 + 18.64 + 1.09 = 20.73
@@ -207,8 +223,8 @@ sealed class MonsterCatalog(string folder = "data")
     }
 
     private sealed record LifeTables(List<(int MonsterLife, int MinionLife, int AltLife1, int AltLife2, double Damage,
-        int Experience, int Accuracy, int Evasion, int EvasiveEvasion, double MinionDamage)> Levels,
-        List<(bool Minion, bool AltLife1, bool AltLife2, int DamageSpread, bool IgnoresAttackSpeed)> Types)
+        int Experience, int Accuracy, int Evasion, int EvasiveEvasion, double MinionDamage, int Armour)> Levels,
+        List<(bool Minion, bool AltLife1, bool AltLife2, int DamageSpread, bool IgnoresAttackSpeed, int ArmourIncreased)> Types)
     {
         public static LifeTables? Load(string folder)
         {
@@ -220,12 +236,16 @@ sealed class MonsterCatalog(string folder = "data")
                 [.. s.RootElement.EnumerateArray().Select(r => (r.GetProperty("MonsterLife").GetInt32(), r.GetProperty("MinionLife").GetInt32(),
                     r.GetProperty("AltLife1").GetInt32(), r.GetProperty("AltLife2").GetInt32(), r.GetProperty("Damage").GetDouble(),
                     r.GetProperty("Experience").GetInt32(), r.GetProperty("Accuracy").GetInt32(), r.GetProperty("Evasion").GetInt32(),
-                    r.GetProperty("EvasiveEvasion").GetInt32(), r.GetProperty("MinionDamage").GetDouble()))],
+                    r.GetProperty("EvasiveEvasion").GetInt32(), r.GetProperty("MinionDamage").GetDouble(), Number(r, "Armour")))],
                 [.. t.RootElement.EnumerateArray().Select(r => (r.GetProperty("IsPlayerMinion").GetBoolean(), r.GetProperty("AltLife1").GetBoolean(),
                     r.GetProperty("AltLife2").GetBoolean(),
                     r.TryGetProperty("DamageSpread", out var spread) && spread.ValueKind == JsonValueKind.Number ? spread.GetInt32() : 0,
-                    r.TryGetProperty("BaseDamageIgnoresAttackSpeed", out var ignores) && ignores.ValueKind == JsonValueKind.True))]);
+                    r.TryGetProperty("BaseDamageIgnoresAttackSpeed", out var ignores) && ignores.ValueKind == JsonValueKind.True,
+                    Number(r, "Armour")))]);
         }
+
+        static int Number(JsonElement row, string name) =>
+            row.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number ? value.GetInt32() : 0;
     }
 
     /// <summary>A MonsterVarieties row by number, or by Id: exact, then the last path segment, then any part of it,

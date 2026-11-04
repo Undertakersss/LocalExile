@@ -89,16 +89,19 @@ static partial class Game
         => MonsterTakesMitigated(m, DamageModel.Mitigate(rolled, type => MonsterHitResistance(m, type, pen)), spell);
 
     /// <summary>
-    /// The damage a resisted hit of the player deals to a monster: the physical part less its physical damage reduction,
-    /// then its damage taken (Berserking's reduction, Spell Resistant's less spell damage, its shock and Glacial Wave's
-    /// chill, the Intimidate or Unnerve on it at <paramref name="now"/>; without a time those do not count). Blocking is rolled before
-    /// (<see cref="MonsterBlocks"/>).
+    /// The damage a resisted hit of the player deals to a monster: the physical part less its armour
+    /// (DefaultMonsterStats <c>Armour</c> and the type's increased percent, <see cref="MonsterCatalog.BaseArmour"/>)
+    /// and its additional physical damage reduction, then its damage taken (Berserking's reduction, Spell Resistant's
+    /// less spell damage, its shock and Glacial Wave's chill, the Intimidate or Unnerve on it at <paramref name="now"/>;
+    /// without a time those do not count). Blocking is rolled before (<see cref="MonsterBlocks"/>).
     /// </summary>
-    internal static int MonsterTakesMitigated(SpawnedMonster m, DamagePacket mitigated, bool spell, double now = double.NaN)
+    internal static int MonsterTakesMitigated(SpawnedMonster m, DamagePacket mitigated, bool spell, double now = double.NaN,
+        int? armourRating = null)
     {
         var e = m.Mods.Effects;
         double physical = mitigated[DamageType.Physical].Min;
-        double physicalTaken = physical * Math.Max(0, 1 - e.PhysicalReduction / 100.0);
+        int armour = armourRating ?? e.Armour(Monsters.BaseArmour(m.Variety, m.Level) ?? 0);
+        double physicalTaken = physical * PhysicalArmourFactor(physical, armour, e.PhysicalReduction);
         double total = mitigated.MinTotal - physical + physicalTaken;
         // The player's debuffs on it add to its own increased damage taken (MonsterDamageTaken): his enemy auras' elemental
         // increase on fire, cold and lightning only, his Withered on chaos only, and Pride's more Physical Damage on the
@@ -116,7 +119,20 @@ static partial class Game
 
     internal static DamagePacket MonsterTakenComponents(SpawnedMonster m, DamagePacket mitigated, bool spell) =>
         mitigated.Select((type, range) => range.Scale(type == DamageType.Physical
-            ? Math.Max(0, 1 - m.Mods.Effects.PhysicalReduction / 100.0) : 1)).Scale(m.Mods.Effects.DamageTaken(spell));
+            ? PhysicalArmourFactor(m, range.Min) : 1)).Scale(m.Mods.Effects.DamageTaken(spell));
+
+    // Armour rating against this physical hit, added to the mod's additional physical reduction and capped at 90%,
+    // as DamageModel.MitigatePhysical does for the player. Damage over time does not come through here.
+    internal static double PhysicalArmourFactor(SpawnedMonster m, double physical) =>
+        PhysicalArmourFactor(physical, m.Mods.Effects.Armour(Monsters.BaseArmour(m.Variety, m.Level) ?? 0), m.Mods.Effects.PhysicalReduction);
+
+    internal static double PhysicalArmourFactor(double physical, int armour, int additionalReduction)
+    {
+        if (physical <= 0) return 1;
+        int reduction = Math.Clamp(DamageModel.ArmourReduction(Math.Max(0, armour), (int)Math.Round(physical))
+            + Math.Max(0, additionalReduction), 0, DamageModel.DamageReductionCap);
+        return (100.0 - reduction) / 100.0;
+    }
 
     /// <summary>The player's base_self_critical_strike_multiplier_-% (critical strikes against them deal less extra damage).</summary>
     internal static int SelfCriticalReduction(ClientState conn) =>
