@@ -91,7 +91,8 @@ static partial class Game
     /// <summary>
     /// A player hit that landed inflicts its ailments (MonsterElementalAilments.Inflict) from the damage the monster took
     /// per type: the mitigated packet × its damage taken × the critical multiplier on a critical strike. The threshold is
-    /// its maximum life (wiki: equal to it for most monsters). <paramref name="player"/> is CharacterPlayerStats,
+    /// maximum life × DefaultMonsterStats AilmentThreshold / MonsterLife (<see cref="MonsterCatalog.AilmentThreshold"/>),
+    /// which is the maximum life when the columns match. <paramref name="player"/> is CharacterPlayerStats,
     /// <paramref name="skill"/> the skill's own stats; both count. Under the Monsters lock, after the hit's damage, so the
     /// hit does not gain from its own shock.
     /// A killing hit's ailments stay on the corpse (wiki Ailment: a killing hit that inflicts an elemental ailment counts
@@ -110,7 +111,8 @@ static partial class Game
         // The physical part counts after the monster's physical reduction, as the hit's damage does.
         var taken = mitigated.Select((type, range) => range.Scale(factor
             * (type == DamageType.Physical ? Math.Max(0, 1 - m.Mods.Effects.PhysicalReduction / 100.0) : 1)));
-        var added = m.Ailments.Inflict(taken, critical, m.MaxLife, now, name => Player(name) + PanelStats.Of(name, Skill),
+        var added = m.Ailments.Inflict(taken, critical, Monsters.AilmentThreshold(m.Level, (int)m.MaxLife), now,
+            name => Player(name) + PanelStats.Of(name, Skill),
             name => m.Mods.Effects[name], random, AilmentArea(Player, Skill, spell));
         if (m.Dead || m.Life == 0)
         {

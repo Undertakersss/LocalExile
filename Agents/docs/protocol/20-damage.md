@@ -1460,8 +1460,10 @@ hit's damage with `MonsterHitDamage` (the target's shock and chill at the hit's 
 not gain from its own shock. The older `MonsterDamage`, `MonsterTakes*` and `MonsterBurn` without a time leave the
 target's shock and chill out; a new player hit path needs both calls ([Surfcaster](../game/surfcaster.md), Hit paths).
 The damage per type is the resisted packet × the monster's damage taken × the critical multiplier on a critical
-strike; the threshold is its maximum life (wiki: equal to it for most monsters). The attacker's stats are
-`CharacterPlayerStats` plus the skill's own, summed through the panel rows (`PanelStats.Of`).
+strike; the threshold is maximum life × DefaultMonsterStats `AilmentThreshold` / `MonsterLife` at its level
+(`MonsterCatalog.AilmentThreshold`). When those columns match, or the table or a column is missing, it is the
+maximum life (wiki: equal to it for most monsters). Variety thresholds and map ailment multipliers are not applied.
+The attacker's stats are `CharacterPlayerStats` plus the skill's own, summed through the panel rows (`PanelStats.Of`).
 
 | Ailment | Applied by | Effect | Duration |
 |---|---|---|---|
@@ -1608,9 +1610,9 @@ chill, freeze and shock use the same rows and instances on the player
 walk `0x141e7c0b0` and the action clips read; network stats run no calculators ([04](04-player-entity.md) §4.1a). A
 freeze is not sent there (−100 would divide the native clip by zero); the server stops the monster instead.
 
-Not modelled: the shatter visual, unique and boss thresholds and their reduced effects, immunities from the monster's
-variety (.ot), Glacial Wave's chill reflected onto the player by Mirrored (wiki: it then acts on the player too), and the
-client's frozen animation (not checked live).
+Not modelled: the shatter visual, unique and boss threshold multipliers and their reduced effects, immunities from the
+monster's variety (.ot), Glacial Wave's chill reflected onto the player by Mirrored (wiki: it then acts on the player
+too), and the client's frozen animation (not checked live). The level-table ratio above is applied.
 
 ## 2i. Petrified Blood
 
