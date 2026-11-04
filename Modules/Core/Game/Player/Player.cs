@@ -522,6 +522,7 @@ static partial class Game
             if (!PlayerUpdatesCurrent(conn, updates)) return;
             await BurnIgnited(remote, stream, ciphers, conn);
             await TickPoisons(remote, stream, ciphers, conn);
+            await TickBleeds(remote, stream, ciphers, conn);
             if (!PlayerUpdatesCurrent(conn, updates)) return;
             var rf = conn.RighteousFire;
             if (conn.PlayerLife == 0)

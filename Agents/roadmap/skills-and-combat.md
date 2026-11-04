@@ -141,7 +141,8 @@ remaining native checks are recorded in [the port record](../docs/dev/issue75-po
   Every panel row now has a server derivation (the 2026-10-29 batch in Status covers the Defence estimates, off-hand,
   effective critical, secondary and damaging-ailment rows; the owner's live run of 2026-10-29 passed them, the converted
   charges and the Blood Charges); what remains for #75 is actual ailment application behind the ailment rows (projectile
-  ignite now applies; melee/area ignite, bleed and poison do not), Reap's
+  ignite now applies; melee/area ignite does not; an attack's bleed chance now applies, strongest only, with no
+  moving bonus), Reap's
   damage over time debuff and Vaal Reap's temporary Blood Charge maximum, and executing the secondary hits (Bear Trap,
   Herald of Ice) whose rows are display-only. Deferred (2026-10-29, owner's decision): Spirit and Siphoning Charges. Their only 3.29
   player sources are unique mods (`maximum_spirit_charges_per_abyss_jewel_equipped`,
