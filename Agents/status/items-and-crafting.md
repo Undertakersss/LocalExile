@@ -309,7 +309,7 @@ Part of [Status](../Status.md); what to build next in this area is in
   The probabilities are an approximation (5% non-white at item level 1, +0.25 points per level up to 30% at 100, and
   +0.25 points per 1% quality for Chromatic/bench); `SocketColours`, [13](../docs/protocol/13-items.md),
   "Socket colours (3.29)".
-  Not modelled: Tainted Chromatic/Jeweller's Orbs, Orb of Binding, the Locus of Corruption, the 25-roll bench reward,
+  Not modelled: Tainted Chromatic/Jeweller's Orbs, the Locus of Corruption, the 25-roll bench reward,
   special item overrides.
 - **Orb of Alchemy:** a modifiable normal item becomes an identified rare with 4-6 weighted affixes (CoE's 2/3, 1/4,
   1/12; jewels 3-4 with two per side) and a rare name. Flasks are magic-only; unknown/unsupported/unmodifiable,
@@ -317,6 +317,9 @@ Part of [Status](../Status.md); what to build next in this area is in
   CoE count/jewel checks, ordinary/Shift inventory/stash dispatch and save reloads have automated coverage.
   The old live check (2026-10-21) predates these rules; native re-acceptance is pending.
   See [13](../docs/protocol/13-items.md), "Orb of Alchemy", and [evidence](../docs/re/alchemy-coe.md).
+- **Orb of Binding:** a normal item becomes rare like an Alchemy, with min(4, its socket cap) white sockets in one
+  link. A base with no sockets is only made rare. Socketed gems are refused.
+  See [13](../docs/protocol/13-items.md), "Orb of Binding".
 - **Chaos Orb:** a modifiable rare item's unprotected affixes are rerolled (CoE 4/5/6 counts, jewels 3-4 with two per
   side; new tiers, new rare name); prefix/suffix metamod locks keep their side. Flasks are magic-only; non-rare,
   unmodifiable/unsupported and empty-pool targets are refused before spending.
@@ -465,7 +468,8 @@ Part of [Status](../Status.md); what to build next in this area is in
 ## Not working yet
 
 - Most uniques and special mods (#60), and chancing; Mageblood and normal Crown of Eyes have definitions;
-  currency other than Scroll of Wisdom, Chromatic Orb, Jeweller's Orb, Orb of Fusing, Orb of Alchemy, Chaos Orb,
+  currency other than Scroll of Wisdom, Chromatic Orb, Jeweller's Orb, Orb of Fusing, Orb of Alchemy, Orb of Binding,
+  Chaos Orb,
   Divine Orb, Orb of Scouring, Orb of Transmutation, Orb of Alteration, Orb of Augmentation, Regal Orb, Exalted Orb,
   Orb of Annulment, Armourer's Scrap, Blacksmith's Whetstone, Orb of Chance, Vaal Orb, the four Eldritch Ichors and
   Embers, Enkindling Orb, Instilling Orb, Glassblower's Bauble, Fracturing Orb, Mirror of Kalandra, Hinekora's

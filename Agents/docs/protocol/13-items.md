@@ -721,7 +721,7 @@ rest; `Jewellers` and the bench's socket-count crafts add white sockets and keep
 handles the `NN` crafts (rerolls the colours until the item has at least N non-white sockets, with the item's chance,
 then forces any missing ones); `CurrencyEffects.Vaal` colours one white socket.
 
-Not modelled: Tainted Chromatic and Tainted Jeweller's Orbs, the Orb of Binding, the Locus of Corruption and the
+Not modelled: Tainted Chromatic and Tainted Jeweller's Orbs, the Locus of Corruption and the
 bench's milestone reward (25 reforges keeping the most non-white sockets). Verified live 2026-10-26: white sockets are
 drawn and accepted, Chromatic leaves one socket non-white and the rest white, Jeweller's keeps retained colours and
 adds white ones, and the matching-colour +10% quality changes the gem's stats; the stat path is in
@@ -738,6 +738,14 @@ at most two per side.
 Flasks are magic-only and refused. Unknown/unmodifiable bases, non-normal items, corrupted/mirrored items and empty
 pools are refused before spending.
 The 300-apply sample and jewel caps are in [the source comparison](../re/alchemy-coe.md).
+
+### Orb of Binding
+
+`CurrencyUpgradeToRareAndSetSockets`, same 0x71/0x72 handler. `CurrencyEffects.Binding` upgrades a normal item to rare
+the way an Alchemy does, then sets a socketed base to min(4, its Jeweller socket cap) white sockets in one link.
+A level-1 armour gets two; a level-50 body gets four; a shield stays at its class cap of three. Sockets above that
+are dropped. A base with no sockets is only made rare. Socketed gems, flasks, non-normal items and empty pools are
+refused before an orb is spent.
 
 ### Chaos Orb (2026-10-21, verified live; CoE-checked 2026-10-30)
 
