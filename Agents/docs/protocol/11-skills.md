@@ -1673,8 +1673,11 @@ player, 0x1000). Every draw is the float range `0x1404ce3f0`: N = (int)(hi − l
   sets it.
 
 The Gateway flies the same legs (`SparkLegs`, `ProjectileProfile.Legs`): from the same seed, the server's legs are
-the client's cell for cell (`SparkLegsTests`, three live sparks). The start cell is the server's walk position, which can be cells away from
-the client's own (it snaps only beyond ~8.5 cells), so the drawn and simulated sparks then fly parallel paths.
+the client's cell for cell (`SparkLegsTests`, three live sparks). The start cell is the one the client keeps after the
+cast's stop, not the walk estimate the 0x1ab reports (the client snaps to that only past ~92 cells, about 8.5 m).
+A stop (`0x141e350e0`) takes effect on the next tick, after that tick's steps, so a cast while walking leaves from
+`ClientPredictedCastCell`: the lockstep frame's end, otherwise 16 ms further along the path, frozen for that cast.
+Held-mouse drift the server cannot see ([07](07-latency-visibility-movement.md) §5) can still separate the two copies.
 
 **The client's volley (static RE 2026-10-31, `0x141bb13a0`, setup `0x141bb0f20`).** Every spell projectile the client
 draws itself is aimed by one of four patterns, checked in this order: parallel (`0x141bb89d0`, when
