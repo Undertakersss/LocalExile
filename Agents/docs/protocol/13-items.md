@@ -753,9 +753,9 @@ CoE's 300-applies counts, jewel limits and prefix-lock result are in [the source
 ### Divine Orb (2026-10-21, verified live)
 
 `CurrencyModValues`, same handler (0x71, 0x72 with Shift; one orb spent per use). `ItemRolls.Reforge` rerolls only
-the values of each explicit mod within its own tier; the mods, their order, implicits, rarity and name stay. A new tier
-would be a different mod, and the client reorders the tooltip by mod, so the lines would jump. An item without explicit
-mods is refused.
+the values of each explicit mod within its own tier; the mods, their order, implicits, rarity and name stay. A fractured
+mod is rerolled and stays fractured. A prefix or suffix lock keeps that side. A new tier would be a different mod, and
+the client reorders the tooltip by mod, so the lines would jump. An item with no rerollable explicit is refused.
 
 ### Blessed Orb (2026-10-23, not verified live yet)
 
@@ -935,7 +935,8 @@ mods, not corrupted, mirrored or already fractured, on a supported non-`Unmodifi
 `ItemClasses.CanBeFractured` is set, has one random explicit mod fractured (`ItemRolls.Fracture`). Metamod-protected
 mods are eligible: the orb does not respect metamods. The mod moves to the front of the explicits and
 `Item.FracturedCount` (saved) counts it. Every other currency keeps fractured mods: Chaos, Vaal and the other rerolls
-roll around them (they count towards the affix limits), Annulment and Divine skip them, Augmentation / Exalted insert
+roll around them (they count towards the affix limits), Annulment skips them, Divine rerolls their values,
+Augmentation / Exalted insert
 after them, and Scouring removes everything else (the item stays magic so the mod still shows).
 
 The client is told through the magic properties' u8 `+0x7a` (the byte right after their u16 flags, sent 0 before):

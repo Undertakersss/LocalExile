@@ -226,8 +226,8 @@ static class CurrencyEffects
 
     /// <summary>Fracturing Orb (as the official one): a rare item with at least four explicit mods, not corrupted,
     /// mirrored or fractured yet, on a base and class the game allows to fracture, has one random explicit mod
-    /// fractured: it moves to the front of the explicits and from then on no currency removes or changes it (Scouring,
-    /// Chaos, Annulment, Divine, Vaal …).</summary>
+    /// fractured: it moves to the front of the explicits and from then on no currency removes it (Scouring,
+    /// Chaos, Annulment, Vaal …). A Divine Orb rerolls its values and leaves it fractured.</summary>
     public static Item? Fracture(Item item, ItemRolls rolls, Random random) => rolls.Fracture(item, random);
 
     public const string MirrorOfKalandra = "Metadata/Items/Currency/CurrencyDuplicate";
