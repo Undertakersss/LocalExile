@@ -1491,7 +1491,8 @@ This is a research baseline, not new live skill acceptance or complete native/se
   unimplemented; ordinary ES leech uses the shared recovery writer (§5b).
   See [ES scope](../docs/protocol/20-damage.md#player-energy-shield-2026-10-25).
   Maximum-mana added lightning has original-head native checks and resolved automated checks.
-  The player's hits chill, freeze and shock monsters: threshold maximum life, strongest effect with its own duration,
+  The player's hits chill, freeze and shock monsters: threshold is maximum life × AilmentThreshold / MonsterLife,
+  or maximum life when those match or the table is missing, strongest effect with its own duration,
   shock as increased damage taken (hits and Righteous Fire), chill and freeze in the monster AI and walk, the monster
   mods' ailment stats (of the Ice, of the Tempest, Unstoppable, Mirrored) and the chilled/frozen/shocked buffs.
   Elemental Focus and the never-ailment stats stop those ailments ([20](../docs/protocol/20-damage.md) §3).

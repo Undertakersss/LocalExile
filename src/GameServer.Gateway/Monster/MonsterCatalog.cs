@@ -98,6 +98,31 @@ sealed class MonsterCatalog(string folder = "data")
     }
 
     /// <summary>
+    /// Chill, freeze and shock threshold for a monster whose maximum life is <paramref name="maxLife"/>:
+    /// maximum life × DefaultMonsterStats <c>AilmentThreshold</c> / <c>MonsterLife</c> at this level
+    /// (<see cref="ScaledAilmentThreshold"/>). When the columns match this is the maximum life. Missing tables, a level
+    /// outside the table, or a zero column leave it at the maximum life. Variety thresholds and map ailment multipliers
+    /// are not applied.
+    /// </summary>
+    public int AilmentThreshold(int level, int maxLife)
+    {
+        if (maxLife <= 0) return 0;
+        if (_life.Value is not { } t || level < 1 || level > t.Levels.Count) return maxLife;
+        var row = t.Levels[level - 1];
+        return ScaledAilmentThreshold(maxLife, row.MonsterLife, row.AilmentThreshold);
+    }
+
+    /// <summary>
+    /// <paramref name="maxLife"/> × <paramref name="tableThreshold"/> / <paramref name="tableLife"/>, truncated.
+    /// A non-positive life or threshold column leaves the threshold at <paramref name="maxLife"/>, so a table whose
+    /// columns match (wiki: equal to maximum life for most monsters) and a row without <c>AilmentThreshold</c> do too.
+    /// </summary>
+    internal static int ScaledAilmentThreshold(int maxLife, int tableLife, int tableThreshold) =>
+        maxLife <= 0 ? 0
+        : tableLife <= 0 || tableThreshold <= 0 ? maxLife
+        : (int)Math.Max(1, (long)maxLife * tableThreshold / tableLife);
+
+    /// <summary>
     /// monster_life_+%_final_from_rarity of the rarity's own monster mod (Mods.dat MonsterMagic2 148, MonsterRare2 390,
     /// MonsterUnique2 698): the life a magic, rare or unique monster has more than a normal one. Hillock at level 1:
     /// 39 → 311.
@@ -207,7 +232,7 @@ sealed class MonsterCatalog(string folder = "data")
     }
 
     private sealed record LifeTables(List<(int MonsterLife, int MinionLife, int AltLife1, int AltLife2, double Damage,
-        int Experience, int Accuracy, int Evasion, int EvasiveEvasion, double MinionDamage)> Levels,
+        int Experience, int Accuracy, int Evasion, int EvasiveEvasion, double MinionDamage, int AilmentThreshold)> Levels,
         List<(bool Minion, bool AltLife1, bool AltLife2, int DamageSpread, bool IgnoresAttackSpeed)> Types)
     {
         public static LifeTables? Load(string folder)
@@ -220,7 +245,9 @@ sealed class MonsterCatalog(string folder = "data")
                 [.. s.RootElement.EnumerateArray().Select(r => (r.GetProperty("MonsterLife").GetInt32(), r.GetProperty("MinionLife").GetInt32(),
                     r.GetProperty("AltLife1").GetInt32(), r.GetProperty("AltLife2").GetInt32(), r.GetProperty("Damage").GetDouble(),
                     r.GetProperty("Experience").GetInt32(), r.GetProperty("Accuracy").GetInt32(), r.GetProperty("Evasion").GetInt32(),
-                    r.GetProperty("EvasiveEvasion").GetInt32(), r.GetProperty("MinionDamage").GetDouble()))],
+                    r.GetProperty("EvasiveEvasion").GetInt32(), r.GetProperty("MinionDamage").GetDouble(),
+                    r.TryGetProperty("AilmentThreshold", out var threshold) && threshold.ValueKind == JsonValueKind.Number
+                        ? threshold.GetInt32() : 0))],
                 [.. t.RootElement.EnumerateArray().Select(r => (r.GetProperty("IsPlayerMinion").GetBoolean(), r.GetProperty("AltLife1").GetBoolean(),
                     r.GetProperty("AltLife2").GetBoolean(),
                     r.TryGetProperty("DamageSpread", out var spread) && spread.ValueKind == JsonValueKind.Number ? spread.GetInt32() : 0,
