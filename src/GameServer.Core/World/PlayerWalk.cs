@@ -131,6 +131,10 @@ public sealed class PlayerWalk
     /// <summary>The walker's cell at <paramref name="now"/> (seconds, any monotonic clock).</summary>
     public (int X, int Y) Position(double now) => At(Frame(now), out _);
 
+    /// <summary>The cell the steps have reached at <paramref name="now"/>, without a lockstep frame snap.
+    /// A predictive stop looks one tick ahead along the path that is still in progress.</summary>
+    public (int X, int Y) CellAt(double now) => At(now, out _);
+
     private (int X, int Y) At(double now, out double fraction)
     {
         fraction = 0;

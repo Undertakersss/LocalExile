@@ -336,8 +336,11 @@ Part of [Status](../Status.md); what to build next in this area is in
   again.
   Spark's transfigured and Vaal versions fire Spark's own Projectiles.dat row and follow the same rules; before, they
   had no projectile on the server.
-  Still apart: the start cell is the server's walk position, often a few cells from the client's, so the paths run
-  parallel but offset, and a live check still saw a drawn spark hit with no damage now and then.
+  A cast freezes the cell the client keeps after its stop (`ClientPredictedCastCell`): one 16 ms tick ahead of the
+  walk estimate while moving, the estimate itself while standing.
+  The 0x1ab still reports the estimate; the client snaps to it only past ~92 cells.
+  Held-mouse drift the server cannot see can still separate them, so a live check remains
+  (`spark cast origin=` next to `scripts/re/frida/trace-spark-legs.js`).
   GGG's server sends no object for ordinary bow arrows either, so the live client draws them itself (live capture
   2026-10-29, [port record](../docs/dev/ranged-monster-actions-port.md) "Live reference").
   Tornado Shot fires `Metadata/Projectiles/TornadoShotArrow` (`SkillCatalog.ProjectileFallbacks`; its row is not named

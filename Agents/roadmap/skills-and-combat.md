@@ -26,10 +26,10 @@ The suspend/restore lifecycle is explicit LocalExile policy; see protocol/11-ski
   the live source-only regression is addressed with a separate received buff for the top-left icon, awaiting
   confirmation.
   Radius-scaled aura rings, if added, still need their actual radius.
-- **Spark start cell:** the server flies each spark on the client's wander (Status), but from the server's walk
-  position, often a few cells from where the client starts it, so a drawn spark can still hit with no damage.
-  Start: trace the client's start cell and each leg's start time per frame (`scripts/re/frida/trace-spark-legs.js`)
-  next to the server's `spark seq=` lines, then start the server's legs from the same cell and frame.
+- **Spark start cell:** a cast now freezes the cell the client keeps after its stop (Status), one tick ahead of the
+  walk estimate while moving. The 0x1ab cell stays the estimate.
+  Confirm live: `scripts/re/frida/trace-spark-legs.js` beside `spark cast origin=` and `spark seq=`.
+  Held-mouse drift the server cannot see (protocol 07) can still offset a path.
   Done when: every drawn spark hit deals damage once, and no damage lands without one.
 - **Spectral Throw hit timing:** the skill deals damage (Status), but its hits can land before or after the drawn
   weapon reaches a monster, most on the return toward monsters walking at the thrower.

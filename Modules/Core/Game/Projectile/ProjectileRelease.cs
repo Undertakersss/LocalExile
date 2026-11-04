@@ -69,10 +69,27 @@ static partial class Game
         }
     }
 
+    /// <summary>One client tick, the 16 ms frame protocol 07 uses for a step of drift. A stop
+    /// (0x141e350e0) takes effect on the next tick, after that tick's steps.</summary>
+    internal const double ClientTickSeconds = 0.016;
+
+    /// <summary>
+    /// The cell a client-predicted cast's projectiles leave from. The 0x1ab reports the walk estimate and the client
+    /// keeps its own cell unless the two are ~92 apart. A stop then waits for the next tick's steps, so while the
+    /// estimate is still walking the client ends one tick further along that path (a lockstep frame's end, otherwise
+    /// <see cref="ClientTickSeconds"/>). Call before the cast's <c>Walk.Order</c> clears the path.
+    /// </summary>
+    internal static (int X, int Y) ClientPredictedCastCell(PlayerWalk walk, double at)
+    {
+        if (!walk.Moving(at)) return walk.CellAt(at);
+        double until = walk.FrameOf?.Invoke(at) is { } frame ? frame.End : at + ClientTickSeconds;
+        return walk.CellAt(until);
+    }
+
     internal static Task ScheduleGemProjectile(string remote, NetworkStream stream, ConnectionCiphers ciphers, ClientState conn,
         ushort skillId, (ushort Id, int Effect, string Name, int Level, int Quality, uint Gem) gem,
         (int X, int Y) aim, int action, int recoveryGeneration, CooldownUseTicket? ticket, SkillCriticalRoll criticalRoll,
-        ushort sequence = 0)
+        ushort sequence = 0, (int X, int Y)? predictedOrigin = null)
     {
         var session = ProjectilesFor(remote, stream, ciphers, conn);
         session.Advance();
@@ -109,7 +126,7 @@ static partial class Game
             session.Schedule(ProjectileRuntime.Time(acceptedAt + repeat * cast.Value / 1000d + delay), Valid,
                 () => ClientDrawnVolley(conn, session, skillId, gem,
                     CaptureGemProjectile(conn, session, skillId, gem, aim, criticalRoll, sequence, (uint)left),
-                    sequence, (uint)left));
+                    sequence, (uint)left, predictedOrigin));
         }
         return Task.CompletedTask;
     }
@@ -117,11 +134,22 @@ static partial class Game
     // A spell's projectiles are the client's own (ClientPredicted): the server spreads them as the client's volley
     // does, and flies Spark's sparks on the client's seeded wander from the caster's cell (SparkLegs), so a hit lands
     // where a projectile is drawn.
+    static bool SparkEffect(string? effect) => effect is "Spark" or "SparkAltX" or "SparkAltY" or "VaalSpark";
+
     static ProjectileUse ClientDrawnVolley(ClientState conn, ProjectileSession session, ushort skillId,
         (ushort Id, int Effect, string Name, int Level, int Quality, uint Gem) gem, ProjectileUse use, ushort sequence,
-        uint repeatsLeft)
+        uint repeatsLeft, (int X, int Y)? predictedOrigin = null)
     {
         if (use.Payload is not ProjectileOffense { ClientPredicted: true }) return use;
+        // The fan and the first leg both leave from the cell the client keeps, frozen at the cast. Resampling the
+        // walk at release follows the estimate instead, and the drawn sparks then fly a parallel path.
+        if (SparkEffect(SkillsFor(conn).EffectId(gem.Effect)) && predictedOrigin is { } origin)
+        {
+            var walk = conn.Walk.Position(session.Runtime.Now / (double)ProjectileRuntime.QuantaPerSecond);
+            if (walk != origin)
+                Console.WriteLine($"[gateway] spark cast origin=({origin.X}, {origin.Y}) walk=({walk.X}, {walk.Y})");
+            use = use with { Origin = ProjectileSession.Vector(origin) };
+        }
         var player = CharacterPlayerStats(conn);
         var own = SupportedSkill(conn, skillId).Stats;
         int Player(string key) => Stats.Key(key) is uint k ? player.GetValueOrDefault(k) : 0;
@@ -170,11 +198,12 @@ static partial class Game
                 }
             };
         }
-        if (SkillsFor(conn).EffectId(gem.Effect) is not ("Spark" or "SparkAltX" or "SparkAltY" or "VaalSpark")) return use;
+        if (!SparkEffect(SkillsFor(conn).EffectId(gem.Effect))) return use;
         // The client's life is the skill record's skill_effect_duration, in whole milliseconds.
         double life = Math.Round(1000 * SkillDurationModifiers.Seconds(Own("base_skill_effect_duration"), Player, Own)) / 1000;
         int randomDuration = Get("spark_random_duration_%");
-        var at = conn.Walk.Position(session.Runtime.Now / (double)ProjectileRuntime.QuantaPerSecond);
+        // No cast captured a cell (a repeat scheduled without one): the estimate at release is all there is.
+        var at = predictedOrigin ?? conn.Walk.Position(session.Runtime.Now / (double)ProjectileRuntime.QuantaPerSecond);
         double speed = use.Profile.Speed;
         return use with
         {

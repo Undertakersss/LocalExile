@@ -157,19 +157,26 @@ static partial class Game
                 }
                 int action = 0;
                 (int px, int py) = (0, 0);
+                (int X, int Y)? predicted = null;
                 CooldownUseTicket? cooldownUse = null;
                 int chargeBonus = cast && gem.Name is not null ? ShieldChargeBonusPct(conn, use.SkillId, gem.Effect) : 0, chargeToken = 0;
                 void StartAction()
                 {
                     at = Math.Max(at, conn.ProjectileRuntime?.Runtime.Now / 120000d ?? 0);
                     action = Interlocked.Increment(ref conn.ActionCount);
+                    if (cast) predicted = ClientPredictedCastCell(conn.Walk, at);
                     (px, py) = cast ? conn.Walk.Position(at) : conn.Walk.Order(use.X, use.Y, at);
                     if (cast) conn.Walk.Order(px, py, at);
                     // Readiness and reservation precede movement: a raw early Dash cannot teleport anyway. Shield Charge walks
                     // there at its own speed instead (ShieldCharge.cs).
-                    if (chargeBonus != 0) chargeToken = BeginShieldCharge(conn, use.SkillId, chargeBonus, use.X, use.Y, at);
+                    if (chargeBonus != 0)
+                    {
+                        predicted = null;
+                        chargeToken = BeginShieldCharge(conn, use.SkillId, chargeBonus, use.X, use.Y, at);
+                    }
                     else if (gem.Name is not null && LandsAtAim(conn, gem.Effect))
                     {
+                        predicted = null;
                         var landing = MovementLanding(conn, gem.Effect, (px, py), (use.X, use.Y));
                         conn.Walk.Teleport(landing.X, landing.Y, at);
                     }
@@ -194,7 +201,8 @@ static partial class Game
                     use.SkillId, use.Slot, cooldownUse?.ActionToken ?? action, cooldownUse);
                 bool projectileRuntime = cast && gem.Name is not null && UsesProjectileRuntime(gem.Effect);
                 if (projectileRuntime) _ = CastGemSkill(remote, stream, ciphers, conn, use.SkillId,
-                    (px, py), (use.X, use.Y), sequence: use.Slot, actionToken: cooldownUse?.ActionToken ?? action, cooldownUse: cooldownUse);
+                    (px, py), (use.X, use.Y), sequence: use.Slot, actionToken: cooldownUse?.ActionToken ?? action, cooldownUse: cooldownUse,
+                    predictedOrigin: predicted);
                 bool acknowledged = false;
                 Func<Task> echo = () => Send(remote, stream, ciphers,
                     [.. InstanceProtocol.ActionStarted(PlayerId, px, py, use.X, use.Y, use.SkillId, use.Slot, use.Flags), .. cast ? InstanceProtocol.ActionEnded(PlayerId) : []],
@@ -206,7 +214,7 @@ static partial class Game
                 if (!projectileRuntime && !acknowledged) continue;
                 if (cooldownUse?.Current(conn) == false) continue;
                 if (cast && !projectileRuntime) _ = CastGemSkill(remote, stream, ciphers, conn, use.SkillId, (px, py), (use.X, use.Y), sequence: use.Slot,
-                    actionToken: cooldownUse?.ActionToken ?? action, cooldownUse: cooldownUse);
+                    actionToken: cooldownUse?.ActionToken ?? action, cooldownUse: cooldownUse, predictedOrigin: predicted);
                 // The server lands a movement skill at once, and the client can refuse it or take its time (a Lightning Warp
                 // often does neither, live 2026-11-01): the resync settles which, once the action is over.
                 if (cast && gem.Name is not null && chargeBonus == 0 && LandsAtAim(conn, gem.Effect))
