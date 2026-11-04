@@ -711,6 +711,11 @@ The modelled damaging ailments are:
 |---|---|---|---|
 | Ignite | fire | 90% of the hit's fire damage per second | 4 s |
 | Bleed | physical | 70% of the hit's physical damage per second (200% while moving is not modelled) | 5 s |
+
+An attack hit applies that bleed when `bleed_on_hit_with_attacks_%` or `local_chance_to_bleed_on_hit_%` rolls.
+A critical strike does not bleed by itself; it does add the built-in +50 damage-over-time multiplier, as ignite and
+poison do. Spells do not bleed. Several bleeds can be on one monster; only the strongest deals damage. The tick
+uses the monster's physical damage-taken factor and does not apply armour or the moving bonus.
 | Poison | chaos | 30% of the hit's physical + chaos damage per second, stacking | 2 s |
 
 `Ailments.Ignite/Bleed/Poison` build the effect from a hit packet. Pass the **converted base packet before hit-only
@@ -1217,9 +1222,9 @@ mitigation are composed as described in the [projectile module](../game/projecti
   supported incoming shock path are implemented. The monsters' base resistances are in §4, with penetration.
 - Remaining skill-specific increased/more/effectiveness mechanics beyond the documented packet and support paths.
   Weapon-local and character flat ranges retain conversion history and their separate scopes.
-- Outgoing ailments beyond projectile and granted-skill ignite (§3) and chill, freeze and shock: melee/area attack
-  ignite, bleed, poison; alternative ailments (scorch, brittle, sap); the shatter visual and the on-death effects Shatter
-  suppresses; bleed movement bonus; poison stacking.
+- Outgoing ailments beyond projectile and granted-skill ignite (§3), attack bleed (§3) and chill, freeze and shock:
+  melee/area attack ignite; alternative ailments (scorch, brittle, sap); the shatter visual and the on-death effects
+  Shatter suppresses; the bleed moving bonus; poison stacking.
   Supported incoming elemental ailments are bounded by [Gambler](../game/gambler.md#incoming-elemental-ailments).
 - Per-monster damage conversion and monster-specific mitigation.
 - Damage reflection, specialized leech conversions/conditions, conditional gain on hit, and Mana and Energy Shield

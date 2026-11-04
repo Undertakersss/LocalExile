@@ -1522,6 +1522,8 @@ This is a research baseline, not new live skill acceptance or complete native/se
   They burn on while the player is dead (unverified), with no progress from a dead Hardcore character's kills.
   The default melee attack and melee or area gems do not ignite yet; the footstep ignite has Gateway coverage only,
   not checked with the real client (`MonsterIgnites.cs`, [20](../docs/protocol/20-damage.md) §3).
+  An attack with `bleed_on_hit_with_attacks_%` or `local_chance_to_bleed_on_hit_%` bleeds for 70% of the hit's
+  physical per second for 5 s. Only the strongest bleed deals damage. The moving bonus is not applied.
   Incoming ordinary monster basic-contact ailments now have runtime and Gateway coverage:
   critical fire ignite, cold chill/freeze and critical lightning shock, with avoidance, expiry, immunity, lethal ignite/ES and freeze action cancellation.
   `action_speed_cannot_be_reduced_below_base` keeps the action factor at 1 under chill and freeze (Gateway coverage,
