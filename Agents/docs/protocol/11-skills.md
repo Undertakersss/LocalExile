@@ -2091,7 +2091,9 @@ Native flight/contact logic resides in action/Positioned paths, not this small c
   An actual object-targeted RMB input, sequence 4113, selected clip 39 in both client and server.
   Evidence: `artifacts/wand-ai-validation/wand-native-summary.json`, `wand-after-ground-*.json`
   and `wand-after-object.json` in that directory.
-  Full off-hand selection/timing/damage and nonzero intrinsic attack repeats remain outside this main-hand model.
+  A supported attack's `attack_repeat_count` (Multistrike) repeats that use's hit one swing later, with the same
+  cost and critical roll; a new action drops the repeats still waiting. The ordinary default attack's count stays 0.
+  Full off-hand selection/timing/damage remains outside this main-hand model.
   Automated release, collision, cancellation, packet-order and paused/invalidated impact-tail checks accompany native
   verification in `artifacts/combat-validation/`. A real RMB default wand attack created type `0x8648b085`, hit
   a normal Drowned for 9, played native clip 0 with a 500 ms length, and removed the object 514 ms after impact.

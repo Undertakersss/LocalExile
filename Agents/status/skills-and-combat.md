@@ -148,7 +148,8 @@ Part of [Status](../Status.md); what to build next in this area is in
   (`CommitProjectileHit`) send the same native recovery instead of that clip.
   The faster monster planner issued its first chase after 38 to 50 ms in native controls, without duplicate orders.
   Turn tracking, full 2.4 s Drowned attack pacing and actual Escape-menu pause/resume were also verified.
-  Full off-hand timing/damage and nonzero intrinsic attack repeats are not implemented.
+  Full off-hand timing/damage is not implemented. A gem's `attack_repeat_count` repeats that use; the ordinary
+  wand's count stays 0.
   Code: `Program.Combat.cs`, `Program.RangedAttacks.cs`, `AnimationContacts.cs`, `AnimationVariantSelector.cs`,
   `Program.Monsters.cs`, `HitReaction.cs`.
   Evidence: `artifacts/combat-validation/`, `artifacts/wand-ai-validation/wand-native-summary.json`
@@ -1392,8 +1393,8 @@ This is a research baseline, not new live skill acceptance or complete native/se
   (`monster_projectile_weapon`, SkillID 0) still hit instantly with no shot; see the roadmap.
   Wand main-hand variation follows each class ACT pool and the native input-seeded selector; sixteen actual ground
   inputs covered all four Witch clips with matching selection and an object input also matched (historical LocalExile
-  evidence on the earlier flight loop; the runtime path still needs a native recheck). Complete off-hand timing/damage
-  and nonzero intrinsic attack repeats remain open.
+  evidence on the earlier flight loop; the runtime path still needs a native recheck). Off-hand timing and damage
+  remain open. A gem attack's `attack_repeat_count` repeats that use one swing apart.
   Real-input held-output, moving-target, wall, evasion, pierce, return, pause, transfer, impale and actor-scale checks
   exercise this same runtime. Native bow/skill controls and animation alignment still require client validation.
   Straight flight uses captured ground plus the release keyframe's height, else `Game_PROJECTILE_HEIGHT` (default 5);

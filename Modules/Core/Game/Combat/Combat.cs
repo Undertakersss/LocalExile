@@ -592,7 +592,8 @@ static partial class Game
             {
                 next = conn.NextAttackAt;
                 ready = AttackTiming.Ready(now, next, duration);
-                if (ready) conn.NextAttackAt = AttackTiming.After(now, next, duration);
+                if (ready) conn.NextAttackAt = AttackTiming.After(now, next,
+                    duration * (1 + AttackRepeats(conn, skillId, gem.Effect)));
             }
             if (!ready)
             {
@@ -866,8 +867,11 @@ static partial class Game
         // A channelled skill (Cyclone, ActiveSkillType 47) hits as it starts: its spin is already in motion, and the later
         // sweeps follow on the attack timer (RunChannel).
         bool channelled = Supports.Of(gem.Effect)?.Types.Contains(47) == true;
-        // A spell's repeats (SpellRepeats) land again a cast time apart, with the use's critical roll.
-        return Task.WhenAll(Enumerable.Range(0, SpellRepeats(conn, skillId, gem.Effect) + 1).Select(repeat =>
+        // A spell's repeats (SpellRepeats) and an attack's (AttackRepeats) land again a cast or a swing apart,
+        // with the use's critical roll.
+        int repeats = SkillsFor(conn).IsAttack(gem.Effect)
+            ? AttackRepeats(conn, skillId, gem.Effect) : SpellRepeats(conn, skillId, gem.Effect);
+        return Task.WhenAll(Enumerable.Range(0, repeats + 1).Select(repeat =>
             AreaSkillHit(remote, stream, ciphers, conn, skillId, gem, from, to, immediate: channelled, sequence: sequence,
                 actionToken: actionToken, cooldownUse: cooldownUse, criticalRoll: criticalRoll, channelGeneration: channelGeneration,
                 targetId: targetId, repeat: repeat)));
@@ -1002,12 +1006,14 @@ static partial class Game
         if (castDuration is null) return;
         // Ruthless: whether this use is its skill's Ruthless Blow, counted as it starts.
         double ruthless = spell ? 1 : RuthlessBlowMore(conn, skillId, Stat);
+        double attackSeconds = spell ? 0 : SupportedAttackSeconds(conn, skillId);
         double delay;
         // A spell lands at its area cast clip's contact keyframe (a repeat a whole cast later each), an attack at its
-        // swing's; the player swings where it stands, so without the walk-in offset.
+        // swing's; a Multistrike repeat is one full swing later. The player swings where it stands, so without the
+        // walk-in offset.
         lock (conn.Monsters) delay = spell
             ? castDuration.Value / 1000.0 * (repeat + Animations.SpellAreaRelease(SkillsFor(conn).ClassFor(conn.ClassRow).AnimatedObject))
-            : AttackContactDelay(conn, SupportedAttackSeconds(conn, skillId), approach: false);
+            : RepeatContactAt(0, repeat, attackSeconds, AttackContactDelay(conn, attackSeconds, approach: false));
         // A caller's own shape (Shield Charge's path and end, ShieldCharge.cs) replaces the skill's area radius.
         int radius = radiusOverride ?? SkillRadius(conn, skillStats, spell, gem.Effect);
         // A melee skill aimed far away still lands in front of the player; a self-targeted spell goes off around the caster.
