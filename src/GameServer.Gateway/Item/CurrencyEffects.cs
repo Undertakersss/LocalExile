@@ -9,6 +9,7 @@ static class CurrencyEffects
     public const string JewellersOrb = "Metadata/Items/Currency/CurrencyRerollSocketNumbers";
     public const string OrbOfFusing = "Metadata/Items/Currency/CurrencyRerollSocketLinks";
     public const string OrbOfAlchemy = "Metadata/Items/Currency/CurrencyUpgradeToRare";
+    public const string OrbOfBinding = "Metadata/Items/Currency/CurrencyUpgradeToRareAndSetSockets";
     public const string ChaosOrb = "Metadata/Items/Currency/CurrencyRerollRare";
     public const string DivineOrb = "Metadata/Items/Currency/CurrencyModValues";
     public const string BlessedOrb = "Metadata/Items/Currency/CurrencyRerollImplicit";
@@ -130,7 +131,7 @@ static class CurrencyEffects
     public static bool Recognizes(ItemCatalog items, ItemCatalog.BaseType type, bool essence = false) =>
         essence || HandlesAction(items.CurrencyAction(type))
         || type.Id is "Metadata/Items/Currency/CurrencyIdentification" or ChromaticOrb or JewellersOrb or OrbOfFusing
-            or OrbOfAlchemy or ChaosOrb or DivineOrb or BlessedOrb or OrbOfScouring or OrbOfTransmutation
+            or OrbOfAlchemy or OrbOfBinding or ChaosOrb or DivineOrb or BlessedOrb or OrbOfScouring or OrbOfTransmutation
             or OrbOfAlteration or OrbOfAugmentation or RegalOrb or ExaltedOrb or OrbOfAnnulment or AncientOrb
             or ArmourersScrap or SacredOrb or BlacksmithsWhetstone or OrbOfChance or VaalOrb or GlassblowersBauble
             or GemcuttersPrism or FracturingOrb or CartographersChisel
@@ -265,6 +266,23 @@ static class CurrencyEffects
     /// affixes (CoE's 2/3, 1/4, 1/12) and a rare name. Flasks are magic-only; unknown/unmodifiable bases, non-normal
     /// items and empty pools are refused before the inventory handler spends an orb.</summary>
     public static Item? Alchemy(Item item, ItemRolls rolls, Random random) => rolls.Alchemy(item, random);
+
+    /// <summary>Orb of Binding: a normal item becomes rare the way an Alchemy does, and a base that can have sockets
+    /// is set to min(4, its socket cap) white sockets in one link. The cap is the same item-level and class limit as
+    /// a Jeweller's Orb, so a level-1 armour gets two and a level-50 body gets four. A base with no sockets is only
+    /// upgraded. Socketed gems, flasks, non-normal items and empty pools are refused before an orb is spent.</summary>
+    public static Item? Binding(Item item, ItemCatalog.BaseType type, ItemRolls rolls, Random random)
+    {
+        if (item.Sockets.Any(s => s.Gem is not null)) return null;
+        if (rolls.Alchemy(item, random) is not { } rare) return null;
+        int count = Math.Min(4, MaximumSockets(item, type));
+        if (count < 1) return rare;
+        return rare with
+        {
+            Sockets = Enumerable.Range(0, count).Select(_ => new ItemSocket(SocketColour.White)).ToArray(),
+            Links = [(byte)count],
+        };
+    }
 
     /// <summary>Chaos Orb: a modifiable rare item gets all unprotected explicit affixes rerolled (4-6 new ones, new
     /// tiers and values) and a new rare name; implicits stay. Flasks are magic-only; non-rare items, unknown/
