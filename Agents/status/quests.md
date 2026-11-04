@@ -81,7 +81,9 @@ Part of [Status](../Status.md); what to build next in this area is in
   Docs: [12](../docs/protocol/12-quests.md) §10.
 - a1q3 "The Siren's Cadence" and Act 2: Merveil, the Siren
   spawns in her arena, her death brings Merveil, the Twisted, whose death sets `a1q3-KilledSeaWitch` and creates the
-  exit; the character entered The Southern Forest. Nessa's help and reward are claimed.
+  exit; the character entered The Southern Forest. That save lifts the server's MerveilExitBlockers even when the
+  client already had the row, and activating a waypoint applies the same rows to blockers and exits already placed.
+  Nessa's help and reward are claimed.
   Docs: [12](../docs/protocol/12-quests.md) §9.
 - a1q9 "The Way Forward", Act 1: Piety's blockage at Prisoner's
   Gate sets `a1q9-SeenBlockage` and `a1q9-RoadBlocked`; the road to The Western Forest stays closed (Act 2 opens it).
@@ -184,8 +186,9 @@ Part of [Status](../Status.md); what to build next in this area is in
   reverse-engineered.
   The lords are hostile and the choice comes from the kills (the campaign runner kills all three); the help rewards'
   stats (QuestStaticRewards 4–6) apply once their flags are set.
-- Characters whose activated waypoints carry a quest flag as an access flag (a1q1's Hillock for the Coast) skip that
-  flag's world changes: with OfflineWitch, The Twilight Strand's wall was not created and its gate stood open.
+- Characters whose activated waypoints carry a quest flag as an access flag (a1q1's Hillock for the Coast) still skip
+  a world change decided at entry: with OfflineWitch, The Twilight Strand's wall was not created and its gate stood
+  open. Blockers already on the walk map are refreshed when that row is sent or saved.
 
 ## Not working yet
 

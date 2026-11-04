@@ -78,7 +78,10 @@ static partial class Game
             List<uint> gone = [.. conn.QuestRoomObjects.Where(o => effective.Contains(o.Value.Flag) && Has(o.Value.Flag)).Select(o => o.Key)];
             foreach (uint id in gone) conn.QuestRoomObjects.Remove(id);
             conn.UpdateBarrier();
-            if (conn.QuestBlockers.Any(b => effective.Contains(b.Rule.UnblockedBy))) UpdateQuestBlockers(conn);
+            // A waypoint access row can already be in the client's set (EffectiveChanges is empty) while the walk map
+            // still has the blockers placed before that row arrived. Saving the flag has to lift them too, or the
+            // estimate stops at Merveil's exit after the client has opened it.
+            if (QuestBlockersFollow(changed, conn.QuestBlockers)) UpdateQuestBlockers(conn);
             return new(changed, all, effective, gone);
         }
     }
@@ -193,6 +196,12 @@ static partial class Game
             else await Send(remote, stream, ciphers, InstanceProtocol.RemoveObject(id), $"0x02bb remove area transition 0x{id:x} ({why})");
         }
     }
+
+    // Whether a saved or cleared flag names a blocker still on this connection. Independent of EffectiveChanges: the
+    // client may already have had the row through a waypoint, and the server's walk map still has to match that row.
+    internal static bool QuestBlockersFollow(IEnumerable<string> changed,
+        IReadOnlyList<(Quests.BlockerRule Rule, int X, int Y)> blockers) =>
+        changed.Any(flag => blockers.Any(b => b.Rule.UnblockedBy == flag));
 
     // A quest flag as the client has it: the character's own, or one the World panel's access flags carry (an activated
     // waypoint's area, 16-waypoints.md §4: the Submerged Passage's waypoint brings a1q4-PlacedGlyphs). The client opens

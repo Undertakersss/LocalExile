@@ -223,9 +223,13 @@ static partial class Game
         lock (conn.Waypoints) bits = [.. Enumerable.Range(0, entries.Count)
             .Where(i => conn.Waypoints.Contains(entries[i].Id) || entries[i].Id == WaypointCatalog.LabyrinthPlaza)];
         // The pins need their areas' access quest flags first (the player object carried the ones known at creation).
+        // Those rows also open the client's own blockers (a1q4-PlacedGlyphs, a1q3-KilledSeaWitch). Refresh the walk
+        // map in the same send, or the estimate keeps stopping where the client now walks.
         if (conn.PlayerSent)
         {
+            UpdateQuestBlockers(conn);
             await Send(remote, stream, ciphers, [], "0x02ba player quest flags (waypoints, current)", atGate: () => QuestFlagPresentation(conn));
+            await UpdateShownTransitions(remote, stream, ciphers, conn, why);
         }
         await Send(remote, stream, ciphers, InstanceWaypoints.Waypoints(bits), $"0x004c waypoints: {bits.Count} activated ({why})");
     }
