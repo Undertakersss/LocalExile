@@ -14,7 +14,8 @@ Items keep the Roadmap's priority groups, and are in rough priority order within
 - **Start:** a run of the whole campaign on the modules with the client: Acts 2 to 10, the Epilogue and the Pantheon
   have not had one yet (check that the Pantheon panel highlights the chosen gods); the bandit vote (a2q7's help path)
   and the Pantheon's souls (Divine Vessels, Sin's "Unlock Power": [pantheon](../docs/game/campaign/pantheon.md) §1) are
-  not built.
+  not built. Act 1's exit into Act 2 follows a saved `a1q3-KilledSeaWitch` on the server's blockers as well as the
+  client's; the Strand wall at entry for a waypoint access flag is still open.
   The opening encounter's remaining work is popup acknowledgements and force walls 1/2
   ([opening encounter](../docs/protocol/12-quests.md#opening-encounter-2026-10-25)).
   The Strand's visual pieces (the gate's animation, the Doorman;
