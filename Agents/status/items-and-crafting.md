@@ -323,8 +323,9 @@ Part of [Status](../Status.md); what to build next in this area is in
   CoE count/metamod checks, ordinary/Shift inventory/stash dispatch and save reloads have automated coverage.
   The old live check (2026-10-21) predates these rules; native re-acceptance is pending.
   See [13](../docs/protocol/13-items.md), "Chaos Orb", and [evidence](../docs/re/chaos-coe.md).
-- **Divine Orb (verified live, 2026-10-21):** keeps the affixes, tiers and order and rerolls only values.
-  Shift works. See [13](../docs/protocol/13-items.md), "Divine Orb".
+- **Divine Orb (verified live, 2026-10-21):** keeps the affixes, tiers and order and rerolls only values,
+  including a fractured mod. A prefix or suffix lock keeps that side. Shift works.
+  See [13](../docs/protocol/13-items.md), "Divine Orb".
 - **Orb of Scouring (verified live, 2026-10-21):** a magic / rare / unique item becomes normal, only base mods stay.
   See [13](../docs/protocol/13-items.md), "Orb of Scouring".
 - **Orb of Transmutation:** normal to identified magic, targeting 1-2 weighted affixes at equal probability.

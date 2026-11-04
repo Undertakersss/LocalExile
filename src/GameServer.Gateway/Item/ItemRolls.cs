@@ -377,11 +377,13 @@ sealed class ItemRolls(ItemCatalog catalog, string folder = "data", SystemSettin
     }
 
     /// <summary>Divine Orb: every explicit mod keeps its place and tier and rerolls only its values (a new tier would
-    /// change the mod, and the client reorders the tooltip by mod). Null when the item has no explicit mods.</summary>
+    /// change the mod, and the client reorders the tooltip by mod). A fractured mod is rerolled and stays fractured.
+    /// A prefix or suffix lock keeps that side. Null when no explicit can be rerolled.</summary>
     public Item? Reforge(Item item, Random rng, UniqueCatalog.StatRoll? own = null)
     {
         var rules = new MetacraftRules(item, catalog.Mods);
-        bool Mutable(int i) => item.Mods[i].Section == ModSection.Explicit && !rules.Protected(i) && catalog.Mods.ByHash(item.Mods[i].Hash) is not null;
+        bool Mutable(int i) => item.Mods[i].Section == ModSection.Explicit && !rules.Locked(i)
+            && catalog.Mods.ByHash(item.Mods[i].Hash) is not null;
         if (!Enumerable.Range(0, item.Mods.Count).Any(Mutable)) return null;
         return item with { Mods = [.. item.Mods.Select((m, i) => Mutable(i) ? Reroll(m, rng, own) : m)] };
     }
