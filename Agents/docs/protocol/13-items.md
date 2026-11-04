@@ -786,8 +786,8 @@ Fresh real-client checks of the merged branch remain open.
 ### Orb of Scouring (2026-10-21, verified live)
 
 `CurrencyConvertToNormal`, same handler (0x71, 0x72 with Shift). `CurrencyEffects.Scouring` makes a magic, rare or
-unique item normal: explicit mods and the rare name are removed, implicits and enchants stay. A normal item is refused
-and nothing is spent.
+unique item normal: explicit mods and the rare or unique name are removed, implicits and enchants stay. A unique also
+returns to its base type's art; quality and sockets stay. A normal item is refused and nothing is spent.
 
 ### Orb of Transmutation (2026-10-21, verified live)
 
@@ -1658,6 +1658,6 @@ Probe: `scripts/re/frida/trace-flask-mana.js` (load alone, no `common.js`); test
 
 ### Currency metamod protection
 
-Currency mutations snapshot positive explicit metamod stats before changing the item. Scouring, Annulment, Divine and Chaos preserve existing prefixes/suffixes protected by their respective locks, as well as fractured affixes. Scouring removes the opposite-side protecting craft, retains quality, sockets, links and non-explicit mods, refuses uniques, and derives rarity from retained explicit count (0 normal, 1 magic, 2+ rare). Annulment retains rarity and also excludes attack/caster-tagged affixes when their cannot-roll craft is present. Exalt, Regal and Augment allow additions to a locked side, but filter cannot-roll attack/caster tags. Reforges use cannot-roll restrictions from retained crafts; an unprotected craft removed by Chaos does not restrict the new pool. Bench selective replacement uses the same protection and generation rules. Essence rejects the four outcome-changing metamods (multimod remains allowed). Socket/quality/implicit currencies do not alter explicit affixes.
+Currency mutations snapshot positive explicit metamod stats before changing the item. Scouring, Annulment, Divine and Chaos preserve existing prefixes/suffixes protected by their respective locks, as well as fractured affixes. Scouring removes the opposite-side protecting craft, retains quality, sockets, links and non-explicit mods, turns a unique into its base, and derives rarity from retained explicit count (0 normal, 1 magic, 2+ rare). Annulment retains rarity and also excludes attack/caster-tagged affixes when their cannot-roll craft is present. Exalt, Regal and Augment allow additions to a locked side, but filter cannot-roll attack/caster tags. Reforges use cannot-roll restrictions from retained crafts; an unprotected craft removed by Chaos does not restrict the new pool. Bench selective replacement uses the same protection and generation rules. Essence rejects the four outcome-changing metamods (multimod remains allowed). Socket/quality/implicit currencies do not alter explicit affixes.
 
 Regression coverage: MetacraftTests, real data prefix/suffix lock removal, Divine/Chaos preservation, annul tag protection and added-affix tag exclusion. These fixes do not implement currencies absent from UseItemOn, or replace the documented local Chance/Vaal outcome distributions with official probabilities. References: https://www.poewiki.net/wiki/Metamod and https://www.poewiki.net/wiki/Orb_of_Scouring.
