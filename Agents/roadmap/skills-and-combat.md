@@ -398,11 +398,10 @@ remaining native checks are recorded in [the port record](../docs/dev/issue75-po
   Recheck the resolved bow-contact and target-modifier composition natively before claiming new combined proof.
   Special ES mechanics, the remaining conditional penetration, skill Exposure, damaging and alternative ailments on monsters
   (beyond the player's ignites) and further added-damage/support effects remain open.
-  The player's ignites on monsters exist (`MonsterIgnites`), but only Abberath's Fury's footstep hits call them: the
-  default attack, gems, projectiles and bows need their flat (pre-increase) fire packet passed to `IgniteFromHit` next
-  ([20](../docs/protocol/20-damage.md) §3).
-  An attack's packet goes through `MaximumAttackDamage.Apply` after conversion first (Devout of Ryslatha's more maximum
-  damage scales attack ailments too), with a regression test.
+  The player's ignites cover footsteps (`IgniteFromHit`), projectiles, the default melee attack and melee or area gems
+  (panel rows at release or contact, [20](../docs/protocol/20-damage.md) §3).
+  Attack ignite maxima go through `MaximumAttackDamage.Apply`.
+  Bleed, ignite proliferation and a native check of the new melee and area hits remain open.
   Ordinary Frostblink's bounded ground-instant acceptance passed actual Q, retry and invalid-request checks.
   Its hovered stationary-monster 0x191 path now uses the native size-aware object aim and object-bound confirmation.
   Automated acceptance/queued rejection checks and manual native endpoint experiments pass.

@@ -735,9 +735,10 @@ The "deal Damage faster" modifiers (`faster_burn_%`, `damaging_ailments_deal_dam
 second by (1 + their sum) and divide its duration by it.
 The ignite goes onto the monster's one `MonsterIgnites` (`MonsterIgnites.Add`, through `IgniteLocked`), the same set
 projectile hits add to (below), so every source shares one burn and one `ignited` buff.
-Only Abberath's Fury's footstep hits use `IgniteFromHit` ([Polytheist](../game/polytheist.md)); projectile hits use the
-panel rows captured at release (below); the default melee attack and melee or area gems do not ignite yet.
-An attack's flat packet will go through `MaximumAttackDamage.Apply` (§2i) before it. The ignites burn on while the
+Abberath's Fury's footstep hits use `IgniteFromHit` ([Polytheist](../game/polytheist.md)). Projectile hits, the default
+melee attack and melee or area gems use the panel rows (below): projectiles capture them at release, and a melee or
+area hit reads them at contact. An attack's ignite maxima then pass through `MaximumAttackDamage.Apply` (§2i); minima
+and spells do not. The ignites burn on while the
 player is dead (unverified), and a dead Hardcore character's kills make no progress. Shaper of Flames-style ignites from
 other damage types and ignite proliferation are not modelled.
 
@@ -767,8 +768,10 @@ the ailment critical multiplier). Several ignites can be on one monster; only th
 longer one resumes when it ends. The player tick (`BurnIgnited`, 250 ms) integrates the strongest ignite through each start/end,
 applies the monster's capped fire resistance and damage taken, carries fractions and commits kills as Righteous Fire's
 burn does. The monster wears the native `ignited` buff (BuffDefinitions row 0, flame visual 2) with its timer to the
-last ignite's end, re-sent (the old instance removed first) with each new ignite and removed at expiry or death. Not modelled: melee and area
-ignite, ignite proliferation, "as though dealing more", support more multipliers and the panel's unmodelled buckets.
+last ignite's end, re-sent (the old instance removed first) with each new ignite and removed at expiry or death.
+The same rows and roll ignite a default melee hit and a melee or area gem (`ContactIgnite`, read at contact). An attack,
+including a bow or attack-gem projectile, scales its ignite maxima by more maximum attack damage. Not modelled: ignite
+proliferation, "as though dealing more", support more multipliers and the panel's unmodelled buckets.
 
 ## 3a. Impale contacts and reflected damage
 
