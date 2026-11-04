@@ -44,12 +44,12 @@ static partial class Game
     // whether the monster turns its back for it (action_should_face_away_from_target). Without rig data: null, the
     // halfway release and the default point.
     internal static MonsterRelease? MonsterReleaseFor(ClientState conn, MonsterCatalog.Variety variety, int effect, int level,
-        SkillCatalog.MonsterProjectileInfo projectile)
+        SkillCatalog.MonsterProjectileInfo projectile, ushort sequence = MonsterActionSequence)
     {
         var catalog = SkillsFor(conn);
         var stats = catalog.EffectStats(effect, level);
         bool Has(string name) => Stats.Key(name) is uint key && stats.Any(s => s.Item1 == key && s.Item2 != 0);
-        var clip = catalog.MonsterContact(variety.Id, projectile.AnimationKey ?? "Melee", MonsterActionSequence);
+        var clip = catalog.MonsterContact(variety.Id, projectile.AnimationKey ?? "Melee", sequence);
         if (clip is null) return null;
         var point = Has("projectile_uses_contact_position") ? clip.Point : null;
         if (point is { } p && Has("use_scaled_contact_offset")) point = p.Scaled(variety.ModelScale);
@@ -871,6 +871,8 @@ static partial class Game
         }
         double startedAt = 0;
         bool walkUp = use is null && !area && !a.InPlace;
+        // The clip the client plays is chosen from this swing's sequence. Captured when the action is sent.
+        MonsterRelease? played = a.Release;
         if (!await SendMonsterAction(remote, stream, ciphers, conn, id, m, action, () =>
         {
             startedAt = AreaTime(conn);
@@ -880,7 +882,11 @@ static partial class Game
                 if (acceptedFactor <= 0) return null;
                 seconds = MonsterSwingSeconds(conn, m, startedAt) / acceptedFactor;
             }
-            if (walkUp) seq = m.NextSequence();
+            // A mortar is in place, so it used to keep 0xffff. Live spits use a rising sequence with the top bit set,
+            // and the hit names that same sequence (protocol 11, Sand Spitter 2026-10-30). The clip follows it.
+            if (walkUp || sequence is null && a.Projectile is not null) seq = m.NextSequence();
+            if (a.Projectile is not null && m.Variety is { } variety && variety.GrantedEffects is [int effect, ..])
+                played = MonsterReleaseFor(conn, variety, effect, m.Level, a.Projectile, seq) ?? played;
             var from = m.Walk.Position(startedAt);
             var player = conn.Walk.Position(startedAt);
             m.BusyUntil = startedAt + seconds + conn.LockstepActionTail;
@@ -896,7 +902,7 @@ static partial class Game
             : $"0x01ab monster 0x{id:x} ({m.Label}) attacks the player, attack time {seconds:0.00} s")) return;
         // The contact: the clip's keyframe (the Spitter's attack1 spits at 37.5 % of the attack; GGG's melee hits land by
         // their clip too), half the attack time without rig data.
-        double contact = a.Release?.Fraction ?? (walkUp && m.Variety is { } variety
+        double contact = played?.Fraction ?? (walkUp && m.Variety is { } variety
             ? SkillsFor(conn).MonsterContact(variety.Id, "Melee", seq)?.ContactFraction : null) ?? 0.5;
         if (!await WaitMonsterActionTime(conn, id, m, action, startedAt + seconds * contact)) return;
         if (a.Summon is { } summon)
@@ -907,7 +913,7 @@ static partial class Game
         if (a.Projectile is { } projectile)
         {
             // The shot leaves at the contact and flies; its hit lands when it reaches the player (Program.ProjectileHostile.cs).
-            LaunchMonsterProjectile(remote, stream, ciphers, conn, id, m, a, projectile, action);
+            LaunchMonsterProjectile(remote, stream, ciphers, conn, id, m, a, projectile, action, played, seq);
             return;
         }
         if (area) { await MonsterAreaContact(remote, stream, ciphers, conn, id, m, a, action, areaRadius, seq); return; }
