@@ -135,6 +135,11 @@ sealed class MonsterModEffects(IReadOnlyDictionary<string, int> stats)
 
     public int Evasion(int baseEvasion) => (int)Math.Round(baseEvasion * (1 + this["evasion_rating_+%"] / 100.0));
 
+    /// <summary>The armour rating after <c>physical_damage_reduction_rating_+%</c> (the same increased armour a player's
+    /// rating uses). The level's base rating is <see cref="MonsterCatalog.BaseArmour"/>.</summary>
+    public int Armour(int baseArmour) =>
+        (int)Math.Round(Math.Max(0, baseArmour) * (1 + this["physical_damage_reduction_rating_+%"] / 100.0));
+
     /// <summary>The chance its hit is a critical strike, permyriad: always_crit, else none (no base chance to increase).</summary>
     public int CriticalChance => this["always_crit"] > 0 ? 10_000 : 0;
 
@@ -200,7 +205,7 @@ sealed class MonsterModCatalog(ModCatalog mods, string folder = "data")
         "non_chaos_damage_to_add_as_chaos_damage_%", "attack_speed_+%", "base_cast_speed_+%", "base_movement_velocity_+%",
         "base_fire_damage_resistance_%", "base_cold_damage_resistance_%", "base_lightning_damage_resistance_%",
         "base_chaos_damage_resistance_%", "base_resist_all_elements_%", "base_additional_physical_damage_reduction_%",
-        "evasion_rating_+%", "accuracy_rating_+%", "always_crit",
+        "physical_damage_reduction_rating_+%", "evasion_rating_+%", "accuracy_rating_+%", "always_crit",
         "life_regeneration_rate_per_minute_%", "rare_monster_mod_spell_damage_taken_+%_final", "base_damage_taken_+%",
         "monster_base_block_%", "base_cannot_be_stunned", "hit_damage_+%_per_10%_missing_enemy_life",
         "self_take_no_extra_damage_from_critical_strikes", "avoid_impale_%", "cannot_have_life_leeched_from",

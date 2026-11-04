@@ -1403,10 +1403,12 @@ This is a research baseline, not new live skill acceptance or complete native/se
   Code: Core `Projectiles/`, Gateway `Projectiles/` (`Program.ProjectileRanged.cs`), `Program.RangedAttacks.cs`,
   `OrdinaryRangedAttack.cs`, `OrdinaryRangedShot.cs`, `Program.Combat.cs` and `ClientState.cs`.
   Docs: [framework](../docs/game/projectile-framework.md), [11](../docs/protocol/11-skills.md) section 10.
-- **Combat.** The player's default attack kills monsters with server-side damage (no monster armour yet; each damage
+- **Combat.** The player's default attack kills monsters with server-side damage. Each damage
   type of a hit takes the monster's own base resistance with the hit's penetration subtracted from the capped value,
+  and the physical part then takes the level's armour (`DefaultMonsterStats.Armour` × the type's increased percent,
+  the player's armour formula, added to additional physical reduction, cap 90%).
   `HitMitigation`/`Penetration`; the player's hit lands at the attack animation's contact keyframe, a monster's still
-  at half its attack time).
+  at half its attack time.
   Monsters use their first granted effect and swing back; their attacks roll player evasion and then go through armour
   and block.
   Ordinary physical melee hits can trigger native player TakeHit recovery through 0x1d1.
