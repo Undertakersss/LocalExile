@@ -900,8 +900,8 @@ Live 2026-10-17: Hungry Corpses walk up, swing (animated) and lower the player's
   Chase repaths have a separate 100 ms minimum interval and require at least three cells of Manhattan target change;
   a chaser that stopped short of its cell retries it after arrival, at most every 0.5 s.
   This retains the current walk when the target moves slightly instead of repeatedly restarting its path.
-  A hostile monster within reach stops and swings: 0x1ab with its skill, flags 0x0408 | 0x80, target the player,
-  sequence 0xffff.
+  A hostile monster within reach stops and swings: 0x1ab with its skill, flags 0x0408 | 0x80, target the player.
+  A melee walk-up and a mortar use a rising sequence with the top bit set; other in-place swings still use 0xffff.
   Its busy period covers the full attack duration from the actual action send; contact still occurs halfway through:
   the hit lands if the monster lives and the player is still within reach + 2 (0x1af, then 0x1b1 on the player).
   A mortar skill (Sand Spitter: `monster_mortar_attack`, GrantedEffects SkillID 183 → MonsterMortar 183 →
@@ -918,9 +918,10 @@ Live 2026-10-17: Hungry Corpses walk up, swing (animated) and lower the player's
   still runs from the monster toward the aim (`maintain_projectile_direction_when_using_contact_position`). Data:
   `data/monster-contacts.json` (`scripts/re/monster_contacts.py`: per variety the ACT pools of `Melee` and the
   projectile tables' animation keys, each clip's index, length, contact and position, rig events merged with the .ao
-  chain's as `ot_components.rig_clips`). Whether the client seeds a monster action's clip choice from the 0xffff
-  sequence is assumed from the wand's selector and still needs a live check (the two clips differ by 75 ms and 1.3
-  cells). The lob lands on the player's cell on the shared runtime, no closer to the Spitter than the skill's
+  chain's as `ot_components.rig_clips`). A mortar swing passes its rising sequence into that selector, so the two
+  clips can alternate; that the client seeds the choice the same way is still assumed from the wand selector and needs
+  a live check (the two clips differ by 75 ms and 1.3 cells). The lob lands on the player's cell on the shared runtime,
+  no closer to the Spitter than the skill's
   `projectile_minimum_range` (50 units, 4.6 cells: a player at its feet stands in the dead zone), team 2 so no
   monster is in its way, and the same contact pipeline commits the hit when it lands on a player within the splash
   (`Game_MONSTER_MORTAR_RADIUS`, default 10 cells; the skill's stats carry no radius; `projectile_spread_radius` 3 is
@@ -1292,7 +1293,9 @@ Live 2026-10-18 with the Witch's Fireball. Code: `SkillCatalog.EffectStats`, `Ge
   the main-hand bit since 2026-10-30; index 2 and the header stay zero until their meaning is known (the decode says
   index 0 searches the current action).
   A Sand Spitter's hit on the player (live 2026-10-30) is kind 3, flags 0x4201 (0x4221 on a crit), code 0, skill
-  index 2, with the sequence of the monster's own action (0x80c0…, from its 0x1ab), not 0xffff.
+  index 2, with the sequence of the monster's own action (0x80c0…, from its 0x1ab). The Gateway now sends that
+  sequence on the spit and the hit. The skill index stays 0, which this reader treats as the current action; what
+  live's index 2 selects is not known.
 
   KB/Rain target callbacks consume queued results; stage/end processing is mode/kind-filtered and retains ordinary
   queued records in the checked Predictive/Lockstep client bindings.

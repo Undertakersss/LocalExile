@@ -539,16 +539,18 @@ remaining native checks are recorded in [the port record](../docs/dev/issue75-po
   (`MonsterProjectileSpell`) are a separate adapter. The mortar splash radius is a development default and
   `projectile_spread_radius` (3) is not modelled. Mortars release at their clip's contact keyframe and point
   (`data/monster-contacts.json`); melee swings still land at half the attack time although the same pools carry
-  `Melee` keyframes. Open: whether the client seeds a monster action's clip choice from the 0xffff sequence (the
-  Spitter's attack2 would spit 75 ms earlier and 1.3 cells farther back), the grid handedness of a keyframe's lateral
+  `Melee` keyframes. A mortar's 0x1ab, its clip and its 0x1af now share one rising sequence. Open: whether the client
+  seeds the clip from that sequence (the Spitter's attack2 would spit 75 ms earlier and 1.3 cells farther back),
+  the grid handedness of a keyframe's lateral
   offset (not applied), MonsterVarieties `MinimumAttackDistance` (6 for the Spitter) and the minimum-range dead zone,
   all to check live.
 - **Live reference** ([port record](../docs/dev/ranged-monster-actions-port.md) "Live reference", 2026-10-29/30): GGG's
   server sends no object for a player's bow shot or a Sand Spitter's mortar, and the client draws both.
   Find what stops our client from drawing its own (try live-style skill ids, `0x4000` for the default attack, and the
   live `0x1af` fields: main-hand `0x0200`, skill index 2, the header u32/u16), then drop the server arrow objects.
-  For monsters, try real action sequences (live `0x80bc`…) instead of `0xffff` in the attack's `0x1ab` and its `0x1af`
-  (skill index 2), and see whether the client then draws the mortar.
+  Mortar attacks now send a rising sequence (live `0x80bc`…) on the 0x1ab and the same sequence on the 0x1af.
+  Skill index 2, which live also sends, is still 0 here: the decode reads 0 as the current action. See whether the
+  client then draws the mortar without a server object.
   Explain the hit-timing fit (ours releases at the table's 299.9 cells/s, close to live's 308, yet hits arrive
   2.72 ms per cell against live's 3.25) and add the 300 ms stun bit on hits.
   Find why a level 1 Sand Spitter hits for 5–7 here and a constant 4 on live.

@@ -17,7 +17,7 @@ static partial class Game
     /// actors) are in its way, never the other monsters. The client draws nothing of its own for a monster's action
     /// (Frida 2026-10-29), so the server's object is the projectile the player sees.</summary>
     internal static ProjectileUse MonsterProjectileUse(ProjectileSession session, uint id, SpawnedMonster m, MonsterAttack a,
-        SkillCatalog.MonsterProjectileInfo projectile, int action)
+        SkillCatalog.MonsterProjectileInfo projectile, int action, MonsterRelease? release = null, ushort sequence = MonsterActionSequence)
     {
         var conn = session.Conn;
         double now = session.Runtime.Now / (double)ProjectileRuntime.QuantaPerSecond;
@@ -32,7 +32,7 @@ static partial class Game
         // height; never past half way to the aim, so a close target is not behind the shot. The shot still flies from the
         // monster toward the aim (maintain_projectile_direction_when_using_contact_position); the keyframe's lateral part
         // is not applied (ContactPoint).
-        var release = a.Release;
+        release ??= a.Release;
         double ahead = release?.Point is { } point ? point.ForwardCells * (release.FacesAway ? -1 : 1) : OrdinaryRangedAttack.ReleaseAheadCells;
         ahead = Math.Min(ahead, distance / 2);
         var origin = from + toward * ahead;
@@ -61,7 +61,8 @@ static partial class Game
             + $"{(release is null ? "" : $", clip {release.Clip} at {release.Fraction:0.000} of the attack{(release.FacesAway ? ", facing away" : "")}")})"
             + $" aim={aim}{(projectile.Lobbed ? $" lands at {target} ({landing:0.0} cells)" : "")}");
         return new ProjectileUse(profile, owner, owner, 2, origin, target)
-            { Payload = new HostileProjectileOffense(id, m, a, action, $"{m.Label} {projectile.Metadata}") { Presentation = presentation } };
+            { Payload = new HostileProjectileOffense(id, m, a, action, $"{m.Label} {projectile.Metadata}")
+                { Presentation = presentation, Sequence = sequence } };
     }
 
     /// <summary>A server-created projectile object plays nothing by itself. Start the rig's flight clip at spawn even
@@ -93,12 +94,13 @@ static partial class Game
     // The release at the attack's contact: the shot leaves toward where the player stands now and the flight then owns
     // contact and damage (HostileHit). The AI action must still be current when the runtime releases it.
     internal static void LaunchMonsterProjectile(string remote, NetworkStream stream, ConnectionCiphers ciphers, ClientState conn,
-        uint id, SpawnedMonster m, MonsterAttack a, SkillCatalog.MonsterProjectileInfo projectile, int action)
+        uint id, SpawnedMonster m, MonsterAttack a, SkillCatalog.MonsterProjectileInfo projectile, int action,
+        MonsterRelease? release = null, ushort sequence = MonsterActionSequence)
     {
         var session = ProjectilesFor(remote, stream, ciphers, conn);
         session.Advance();
         session.Schedule(session.Runtime.Now, () => MonsterActionCurrent(conn, id, m, action) && !InGracePeriod(conn),
-            () => MonsterProjectileUse(session, id, m, a, projectile, action));
+            () => MonsterProjectileUse(session, id, m, a, projectile, action, release, sequence));
     }
 
     // Called under the XP -> Monsters lock by the runtime. Only the player takes a monster's projectile; a friendly monster in
@@ -115,7 +117,8 @@ static partial class Game
         double now = Math.Max(contact.At / (double)ProjectileRuntime.QuantaPerSecond, conn.Clock.Elapsed.TotalSeconds);
         var here = conn.Walk.Position(now);
         var from = ((int)Math.Round(contact.Position.X), (int)Math.Round(contact.Position.Y));
-        var outcome = CommitMonsterHitLocked(session.remote, conn, shot.MonsterId, shot.Monster, shot.Attack, now, here, from, checkRange: false);
+        var outcome = CommitMonsterHitLocked(session.remote, conn, shot.MonsterId, shot.Monster, shot.Attack, now, here, from,
+            checkRange: false, sequence: shot.Sequence);
         if (outcome is null) return ProjectileHitResult.Miss;
         session.Packet(outcome.HitPacket, $"0x01af monster 0x{shot.MonsterId:x} projectile hit on the player ({shot.Label})");
         session.Enqueue(() => PresentMonsterHit(session.remote, session.stream, session.ciphers, conn, shot.MonsterId, outcome));
@@ -130,6 +133,8 @@ sealed record HostileProjectileOffense(uint MonsterId, SpawnedMonster Monster, M
 {
     /// <summary>The rig clips the object needs to be seen (Game.MonsterProjectilePresentation).</summary>
     public Game.ProjectilePresentation? Presentation { get; init; }
+    /// <summary>The 0x1ab sequence of the spit. The hit names it; 0xffff matches no live Sand Spitter action.</summary>
+    public ushort Sequence { get; init; } = Game.MonsterActionSequence;
 }
 
 /// <summary>A shot of a server object that is no monster (a Trial of Ascendancy's dart trap). Its own rule commits a
